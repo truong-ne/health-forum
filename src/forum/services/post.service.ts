@@ -1,22 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, PopulateOptions, QueryOptions, UpdateQuery } from 'mongoose';
 import { Post, PostType } from '../schemas/post.schema';
-
-export const postPopulateOptions: PopulateOptions[] = [
-  {
-    path: 'user',
-    model: 'User',
-  },
-  {
-    path: 'likes',
-    model: 'User',
-  },
-];
-
+import NotificationService from './notification.service';
+import { PostAddDto } from '../dtos/postAdd.dto';
+import { BaseService } from '../../config/base.service';
 @Injectable()
-export class PostsService {
-  constructor(@InjectModel('Post') private postModel: Model<PostType>) {}
+export class PostsService extends BaseService {
+  constructor(@InjectModel('Post') private postModel: Model<PostType>,
+  @InjectModel('Comment') private commentModel: Model<Comment>,
+  private notificationService: NotificationService,) {
+    super()
+  }
 
   create(post: Post) {
     return this.postModel.create(post);
@@ -42,10 +37,13 @@ export class PostsService {
     return this.postModel.findByIdAndDelete(id);
   }
 
+  async cascadeDeleteComments(postId: string) {
+    await this.commentModel.deleteMany({ postId });
+  }
+
   async getAllPostsOfSingleUser(userId: string): Promise<any> {
     const values = await this.postModel
       .find({ user: userId })
-      .populate(postPopulateOptions)
       .lean()
       .sort({ createdAt: -1 });
     return values.map((value) => ({ ...value, photo: !!value.photo }));
@@ -53,5 +51,33 @@ export class PostsService {
 
   getPostModel() {
     return this.postModel;
+  }
+
+  async createPost(dto: PostAddDto, userId: string): Promise<any> {
+    if (!dto.description && !dto.photo) {
+      throw new BadRequestException("the_post_needs_a_description_or_a_photo_or_both")
+    }
+
+    const post = { ...dto, user: userId, likes: 0, createdAt: this.VNTime(), updatedAt: this.VNTime()};
+  
+    if (dto.photo) {
+      try {
+        await this.create({ ...post, photo: dto.photo })
+      } catch (error) {
+        throw new BadRequestException("created_post_failed")
+      }
+    } else {
+      try {
+        await this.create(post)
+      } catch (error) {
+        throw new BadRequestException("created_post_failed")
+      }
+    }
+
+    return {
+      "code": 200,
+      "message": "success"
+    }
+
   }
 }

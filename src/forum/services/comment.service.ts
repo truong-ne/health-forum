@@ -1,20 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, PopulateOptions, QueryOptions, UpdateQuery } from 'mongoose';
-import { Comment, CommentType } from '../schemas/comment.schema';
-
-export const commentPopulateOptions: PopulateOptions[] = [
-  {
-    path: 'user likes',
-    model: 'User',
-  },
-];
+import { Comment, CommentSchema, CommentType } from '../schemas/comment.schema';
+import NotificationService from '../services/notification.service';
+import { PostsService } from '../services/post.service';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { ExpectedReturnType, UserReturnType } from '../../config/ExpectedReturnType';
+import { CommentAddDto } from '../dtos/commentAdd.dto';
+import { BaseService } from '../../config/base.service';
+import { NotificationTypeEnum } from '../schemas/notificationTypes';
 
 @Injectable()
-class CommentsService {
-  constructor(@InjectModel('Comment') public commentModel: Model<CommentType>) {}
-  create(user: Comment) {
-    return this.commentModel.create(user);
+export default class CommentsService extends BaseService {
+  constructor(
+    @InjectModel('Comment') public commentModel: Model<CommentType>, 
+    private postsService: PostsService,
+    private notificationsService: NotificationService,
+    private readonly amqpConnection: AmqpConnection
+  ) {
+    super()
+  }
+  create(comment: Comment) {
+    return this.commentModel.create(comment);
   }
 
   findById(id: string, options?: QueryOptions) {
@@ -44,6 +51,78 @@ class CommentsService {
   async cascadeDeleteComments(postId: string) {
     await this.commentModel.deleteMany({ postId });
   }
-}
 
-export default CommentsService;
+  async getPostComments(postId: string): Promise<any> {
+    const post = await this.postsService.findById(postId);
+    if (!post) throw new NotFoundException("post_not_found")
+
+    const comments = await this.find({ postId: postId }, { sort: { createdAt: -1 } });
+  
+    const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
+      exchange: 'healthline.user.information',
+      routingKey: 'user',
+      payload: comments.map(c => c.user),
+      timeout: 10000,
+    })
+
+    if(rabbitmq.code !== 200) {
+      throw new BadRequestException(rabbitmq.message)
+    }
+
+    const data = []
+    comments.forEach(c => {
+      for(let i=0; i<rabbitmq.data.length; i++)
+        if(c.user === rabbitmq.data[i].uid) {
+          data.push({
+            id: c.id,
+            user: rabbitmq.data[i],
+            postId:c.postId,
+            text: c.text,
+            likes: c.likes,
+            createdAt: c.createdAt
+          })
+          break
+        }
+    })
+    
+    return {
+      "code": 200,
+      "message": "success",
+      "data": data
+    }
+  }
+
+  async addComment(dto: CommentAddDto, userId: string): Promise<any> {
+    const post = await this.postsService.findById(dto.postId);
+
+    if (!post) throw new NotFoundException("post_not_found")
+
+    try {
+      await this.create({
+        ...dto,
+        user: userId,
+        likes: 0,
+        createdAt: this.VNTime(),
+        updatedAt: this.VNTime()
+      });
+    } catch (error) {
+      throw new BadRequestException("create_comment_failed")
+    }
+
+    const isPostAuthor = userId === String(post.user);
+    if (!isPostAuthor) {
+      this.notificationsService.sendPostNotificationToUser(
+          userId,
+          post.user,
+          post.id,
+          NotificationTypeEnum.postCommentAdded,
+      );
+    }
+
+    return {
+      "code": 200,
+      "message": "success",
+    }
+  }
+
+}

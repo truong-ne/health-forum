@@ -9,15 +9,11 @@ import {
 @Schema({ timestamps: true })
 export class Notification {
   @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
     required: true,
   })
   from: string;
 
   @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
     required: true,
   })
   to: string;

@@ -1,13 +1,11 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
+import { nanoid } from 'nanoid';
 
 export type CommentType = Comment & Document;
 
 @Schema({ timestamps: true, validateBeforeSave: true })
 export class Comment {
-  @Prop()
-  id: string;
-
   @Prop({ required: true })
   user: string;
 
@@ -23,7 +21,7 @@ export class Comment {
   @Prop()
   updatedAt: Date;
 
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] })
-  likes: string[];
+  @Prop()
+  likes: number; 
 }
 export const CommentSchema = SchemaFactory.createForClass(Comment);

@@ -13,6 +13,8 @@ async function bootstrap() {
 
   app.setGlobalPrefix(process.env.SERVER_NAME)
 
+  await app.startAllMicroservices()
+
   app.use(cookieParser())
   //Swagger
   const config = new DocumentBuilder()

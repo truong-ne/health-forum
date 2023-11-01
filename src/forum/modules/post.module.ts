@@ -1,32 +1,28 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { PostSchema } from '../schemas/post.schema';
-import CommentsService from '../services/comment.service';
-import { PostsService } from '../services/post.service';
-import CommentsModule from './comment.module';
 import NotificationModule from './notification.module';
-import { PhotosModule } from './photo.module';
-
+import { PostSchema } from '../schemas/post.schema';
+import { PostsService } from '../services/post.service';
+import { CommentSchema } from '../schemas/comment.schema';
+import PostsController from '../controllers/post.controller';
 @Module({
   imports: [
-    PhotosModule,
     NotificationModule,
+    MongooseModule.forFeature([{ name: 'Comment', schema: CommentSchema }]),
     MongooseModule.forFeatureAsync([
       {
         name: 'Post',
-        imports: [CommentsModule],
-        useFactory: (commentsService: CommentsService) => {
+        useFactory: (postsService: PostsService) => {
           const schema = PostSchema;
           schema.post('deleteOne', (post) => {
-            commentsService.cascadeDeleteComments(post._id);
+            postsService.cascadeDeleteComments(post._id);
           });
           return schema;
         },
-        inject: [CommentsService],
       },
     ]),
   ],
-  controllers: [],
+  controllers: [PostsController],
   providers: [PostsService],
   exports: [MongooseModule, PostsService],
 })

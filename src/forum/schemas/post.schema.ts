@@ -8,19 +8,14 @@ export class Post {
   @Prop()
   description: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Photo' })
+  @Prop()
   photo: string;
 
   @Prop({ required: true })
   user: string;
 
-  @Prop({
-    default: [],
-  })
-  likes: string[];
-
   @Prop()
-  shares: number;
+  likes: number;
 
   @Prop()
   createdAt: Date;
