@@ -18,6 +18,7 @@ import { Cache } from "cache-manager";
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtGuard } from '../../auth/guards/jwt.guard';
 import { CommentAddDto } from '../dtos/commentAdd.dto';
+import { CommentUpdateDto } from '../dtos/commentUpdate.dto';
 
 @Controller('comments')
 export default class CommentsController {
@@ -45,48 +46,48 @@ export default class CommentsController {
         return await this.commentsService.addComment(dto, req.user.id)
     }
 
-    // @Patch(':commentId')
-    // async editComment(@Param('commentId') commentId: string, @Body() body: any) {
-    //     return await this.commentsService.findByIdAndUpdate(commentId, body);
-    // }
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Sửa bình luận cho bài đăng', description: 'Sửa bình luận cho bài đăng' })
+    @ApiResponse({ status: 200, description: 'Thành công' })
+    @ApiResponse({ status: 401, description: 'Chưa xác thực người dùng' })
+    @ApiResponse({ status: 404, description: 'Không tìm thấy bình luận' })
+    @Patch()
+    async editComment(@Req() req, @Body() body: CommentUpdateDto) {
+        return await this.commentsService.findByIdAndUpdate(body, req.user.id);
+    }
 
-    // @Patch(':commentId/like')
-    // async likeComment(@Param('commentId') commentId: string, @Req() req: any) {
-    //     const userId = req.user.id;
-    //     const comment = await this.commentsService.findById(commentId);
-    //     if (comment.likes.includes(userId))
-    //     throw new HttpException('Comment is already liked', HttpStatus.BAD_REQUEST);
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Thích bình luận của người dùng', description: 'Thích bình luận của người dùng' })
+    @ApiResponse({ status: 200, description: 'Thành công' })
+    @ApiResponse({ status: 401, description: 'Chưa xác thực người dùng' })
+    @ApiResponse({ status: 404, description: 'Không tìm thấy bình luận' })
+    @Patch(':commentId/like')
+    async likeComment(@Param('commentId') id: string, @Req() req) {
+      return await this.commentsService.likeComment(id, req.user.id)
+    }
 
-    //     await comment.updateOne({ $push: { likes: userId } });
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Bỏ thích bình luận của người dùng', description: 'Bỏ thích bình luận của người dùng' })
+    @ApiResponse({ status: 200, description: 'Thành công' })
+    @ApiResponse({ status: 401, description: 'Chưa xác thực người dùng' })
+    @ApiResponse({ status: 404, description: 'Không tìm thấy bình luận' })
+    @Patch(':commentId/unlike')
+    async unlikeComment(@Param('commentId') id: string, @Req() req) {
+      return await this.commentsService.unlikeComment(id, req.user.id)
+    }
 
-    //     const isCommentAuthor = userId === String(comment.user);
-
-    //     if (!isCommentAuthor) {
-    //     this.notificationsService.sendPostNotificationToUser(
-    //         userId,
-    //         comment.user,
-    //         String(comment.postId),
-    //         NotificationTypeEnum.postCommentLiked,
-    //     );
-    //     }
-
-    //     return 'Comment liked successfuly';
-    // }
-
-    // @Patch(':commentId/unlike')
-    // async unlikeComment(@Param('commentId') commentId: string, @Req() req: any) {
-    //     const userId = req.user.id;
-    //     const comment = await this.commentsService.findById(commentId);
-    //     if (!comment.likes.includes(userId))
-    //     throw new HttpException('Comment is not liked', HttpStatus.BAD_REQUEST);
-
-    //     await comment.updateOne({ $pull: { likes: userId } });
-    //     return 'Comment unliked successfuly';
-    // }
-
-    // @Delete(':commentId')
-    // async deleteComment(@Param('commentId') commentId: string) {
-    //     await this.commentsService.findByIdAndDelete(commentId);
-    //     return 'Comment deleted successfully';
-    // }
+    @UseGuards(JwtGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Xóa bình luận của người dùng', description: 'Xóa bình luận của người dùng' })
+    @ApiResponse({ status: 200, description: 'Thành công' })
+    @ApiResponse({ status: 400, description: 'Xóa bình luận thất bại' })
+    @ApiResponse({ status: 401, description: 'Chưa xác thực người dùng' })
+    @ApiResponse({ status: 404, description: 'Không tìm thấy bình luận' })
+    @Delete(':commentId')
+    async deleteComment(@Param('commentId') commentId: string, @Req() req) {
+        return await this.commentsService.findByIdAndDelete(commentId, req.user.id)
+    }
 }

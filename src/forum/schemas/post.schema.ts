@@ -15,7 +15,7 @@ export class Post {
   user: string;
 
   @Prop()
-  likes: number;
+  likes: string[];
 
   @Prop()
   createdAt: Date;

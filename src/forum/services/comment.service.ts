@@ -9,6 +9,7 @@ import { ExpectedReturnType, UserReturnType } from '../../config/ExpectedReturnT
 import { CommentAddDto } from '../dtos/commentAdd.dto';
 import { BaseService } from '../../config/base.service';
 import { NotificationTypeEnum } from '../schemas/notificationTypes';
+import { CommentUpdateDto } from '../dtos/commentUpdate.dto';
 
 @Injectable()
 export default class CommentsService extends BaseService {
@@ -36,20 +37,24 @@ export default class CommentsService extends BaseService {
     return this.commentModel.findOne(query, undefined, options);
   }
 
-  findByIdAndDelete(id: string) {
-    return this.commentModel.findByIdAndDelete(id);
+  findByIdAndDelete(id: string, userId: string) {
+    return this.commentModel.findOneAndDelete({ id: id, user: userId });
   }
 
-  findByIdAndUpdate(id: string, update: UpdateQuery<CommentType>, options?: QueryOptions) {
-    return this.commentModel.findByIdAndUpdate(id, update, {
+  findByIdAndUpdate(dto: CommentUpdateDto, id: string, options?: QueryOptions) {
+    const update: UpdateQuery<CommentType> = {
+      $set: { text: dto.text },
+    };
+    const comment = this.commentModel.findOneAndUpdate({ id: dto.commentId, user: id }, update, {
       new: options?.new ?? true,
       runValidators: options?.runValidators ?? true,
       ...options,
     });
-  }
-
-  async cascadeDeleteComments(postId: string) {
-    await this.commentModel.deleteMany({ postId });
+    if (!comment) throw new NotFoundException('comment_not_found');
+    return {
+      "code": 200,
+      "message": "success"
+    }
   }
 
   async getPostComments(postId: string): Promise<any> {
@@ -101,7 +106,7 @@ export default class CommentsService extends BaseService {
       await this.create({
         ...dto,
         user: userId,
-        likes: 0,
+        likes: [],
         createdAt: this.VNTime(),
         updatedAt: this.VNTime()
       });
@@ -109,12 +114,12 @@ export default class CommentsService extends BaseService {
       throw new BadRequestException("create_comment_failed")
     }
 
-    const isPostAuthor = userId === String(post.user);
+    const isPostAuthor = userId === String((await post.data).user);
     if (!isPostAuthor) {
       this.notificationsService.sendPostNotificationToUser(
           userId,
-          post.user,
-          post.id,
+          (await post.data).user,
+          (await post.data).id,
           NotificationTypeEnum.postCommentAdded,
       );
     }
@@ -122,6 +127,49 @@ export default class CommentsService extends BaseService {
     return {
       "code": 200,
       "message": "success",
+    }
+  }
+
+  async likeComment(id: string, userId: string): Promise<any> {
+    const comment = await this.findById(id);
+    if (!comment) throw new NotFoundException('comment_not_found');
+    if (comment.likes.includes(userId))
+      throw new BadRequestException("comment_is_liked_already")
+
+    await comment.updateOne(
+      {
+        $push: { likes: userId },
+      },
+      { runValidators: true },
+    );
+
+    const isPostCreator = userId === String(comment.user);
+    if (!isPostCreator) {
+      this.notificationsService.sendPostNotificationToUser(
+        userId,
+        comment.user,
+        String(comment.postId),
+        NotificationTypeEnum.postCommentLiked,
+      );
+    }
+
+    return {
+      "code": 200,
+      "message": "success"
+    }
+  }
+
+  async unlikeComment(id: string, userId: string): Promise<any> {
+    const comment = await this.findById(id);
+    if (!comment) throw new NotFoundException('comment_not_found');
+    if (!comment.likes.includes(userId))
+      throw new BadRequestException("comment_is_not_liked")
+
+    await comment.updateOne({ $pull: { likes: userId } });
+
+    return {
+      "code": 200,
+      "message": "success"
     }
   }
 

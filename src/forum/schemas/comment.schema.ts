@@ -22,6 +22,6 @@ export class Comment {
   updatedAt: Date;
 
   @Prop()
-  likes: number; 
+  likes: string[]; 
 }
 export const CommentSchema = SchemaFactory.createForClass(Comment);
