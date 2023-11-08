@@ -7,11 +7,14 @@ import { PostAddDto } from '../dtos/postAdd.dto';
 import { BaseService, getAdvanceResults } from '../../config/base.service';
 import { PostUpdateDto } from '../dtos/postUpdate.dto';
 import { NotificationTypeEnum } from '../schemas/notificationTypes';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { ExpectedReturnType, UserReturnType } from '../../config/ExpectedReturnType';
 @Injectable()
 export class PostsService extends BaseService {
   constructor(@InjectModel('Post') private postModel: Model<PostType>,
   @InjectModel('Comment') private commentModel: Model<Comment>,
-  private notificationService: NotificationService,) {
+  private notificationService: NotificationService,
+  private readonly amqpConnection: AmqpConnection) {
     super()
   }
 
@@ -23,8 +26,8 @@ export class PostsService extends BaseService {
     return this.postModel.find(query, undefined, options);
   }
 
-  findById(id: string, options?: QueryOptions) {
-    const post = this.postModel.findById(id, undefined, options);
+  async findById(id: string, options?: QueryOptions) {
+    const post = await this.postModel.findById(id, undefined, options);
     if (!post) throw new NotFoundException('post_not_found');
     return {
       "code": 200,
@@ -121,27 +124,52 @@ export class PostsService extends BaseService {
     const limit = limitQ ?? 2;
     const query = {};
   
-    const posts = getAdvanceResults(
+    const posts = await getAdvanceResults(
       this.getPostModel(),
       query,
       page,
       limit,
       undefined,
       undefined,
-      {
-        createdAt: -1,
-      },
+      { 'updatedAt': -1 },
     );
+
+    const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
+      exchange: 'healthline.user.information',
+      routingKey: 'user',
+      payload: posts.data.map(p => p.user),
+      timeout: 10000,
+    })
+
+    if(rabbitmq.code !== 200) {
+      throw new BadRequestException(rabbitmq.message)
+    }
+
+    const data = []
+    posts.data.forEach(p => {
+      for(let i=0; i<rabbitmq.data.length; i++)
+        if(p.user === rabbitmq.data[i].uid) {
+          data.push({
+            id: p.id,
+            description: p.description,
+            photo: p.photo,
+            user: rabbitmq.data[i],
+            likes: p.likes,
+            updatedAt: p.updatedAt,
+          })
+          break
+        }
+    })
 
     return {
       "code": 200,
       "message": "success",
-      "data": posts
+      "data": data
     }
   }
 
   async likePost(id: string, userId: string): Promise<any> {
-    const post = await this.findById(id, { projection: 'likes user' });
+    const post = await this.findById(id);
     if (!post) throw new NotFoundException('post_not_found');
 
     if ((await post.data).likes.includes(userId))
