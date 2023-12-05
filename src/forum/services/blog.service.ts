@@ -15,7 +15,6 @@ export class BlogsService extends BaseService {
   }
 
   create(blog: Blog) {
-    console.log(blog)
     return this.blogModel.create(blog);
   }
 
@@ -39,8 +38,6 @@ export class BlogsService extends BaseService {
 
   async deleteBlog(id: string): Promise<any> {
     const blog = await this.findById(id);
-
-    console.log(blog.data.photo)
     
     const rabbit = await this.amqpConnection.request<any>({
         exchange: 'healthline.upload.folder',
