@@ -38,7 +38,6 @@ export class BlogsService extends BaseService {
 
   async deleteBlog(id: string): Promise<any> {
     const blog = await this.findById(id);
-    console.log(blog)
     
     const rabbit = await this.amqpConnection.request<any>({
         exchange: 'healthline.upload.folder',
