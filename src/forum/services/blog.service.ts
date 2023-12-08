@@ -18,8 +18,8 @@ export class BlogsService extends BaseService {
     return this.blogModel.create(blog);
   }
 
-  find(query: FilterQuery<BlogType>, options?: QueryOptions) {
-    return this.blogModel.find(query, undefined, options);
+  async find(query: FilterQuery<BlogType>, options?: QueryOptions): Promise<any> {
+    return await this.blogModel.find(query, undefined, options);
   }
 
   async findById(id: string, options?: QueryOptions) {
@@ -38,7 +38,8 @@ export class BlogsService extends BaseService {
 
   async deleteBlog(id: string): Promise<any> {
     const blog = await this.findById(id);
-    
+    console.log(blog)
+
     const rabbit = await this.amqpConnection.request<any>({
         exchange: 'healthline.upload.folder',
         routingKey: 'delete_file',
