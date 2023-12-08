@@ -6,6 +6,7 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ExpectedReturnType, UserReturnType } from '../../config/ExpectedReturnType';
 import { Blog, BlogType } from '../schemas/blog.schema';
 import { BlogDto } from '../dtos/blog.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
 @Injectable()
 export class BlogsService extends BaseService {
   constructor(@InjectModel('Blog') private blogModel: Model<BlogType>,
@@ -120,5 +121,21 @@ export class BlogsService extends BaseService {
     }
   }
 
+  async updateMeilisearch(data: any) {
+      const response = await fetch('https://meilisearch-truongne.koyeb.app/indexes/blog/documents', {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer CHOPPER_LOVE_MEILISEARCH",
+          },
+          body: JSON.stringify(data),
+      });
+    }
 
+    @Cron(CronExpression.EVERY_10_MINUTES)
+    async getAllBlog() {
+        const blogs = await this.blogModel.find()
+
+        await this.updateMeilisearch(blogs)
+    }
 }

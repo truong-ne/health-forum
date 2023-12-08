@@ -7,6 +7,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { BlogsService } from '../services/blog.service';
 import BlogsController from '../controllers/blog.controler';
 import { BlogConsumer } from '../consumers/blog.consumer';
+import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
     RabbitMQModule.forRoot(RabbitMQModule, {
@@ -20,6 +21,7 @@ import { BlogConsumer } from '../consumers/blog.consumer';
         connectionInitOptions: { wait: true, reject: true, timeout: 10000 },
     }),
     MongooseModule.forFeature([{ name: 'Blog', schema: BlogSchema }]),
+    ScheduleModule.forRoot(),
   ],
   controllers: [BlogsController],
   providers: [BlogsService, BlogConsumer],
