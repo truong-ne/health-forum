@@ -20,6 +20,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PostAddDto } from '../dtos/postAdd.dto';
 import { PostUpdateDto } from '../dtos/postUpdate.dto';
 import { BlogsService } from '../services/blog.service';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('blog')
 @Injectable()
@@ -42,6 +43,8 @@ export default class BlogsController {
         return await this.blogsService.findById(id);
     }
 
+    @UseGuards(AdminGuard)
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Xóa hồ sơ bệnh án của bệnh nhân', description: 'Xóa hồ sơ bệnh án của bệnh nhận' })
     @ApiResponse({ status: 200, description: 'Thành công' })
     @ApiResponse({ status: 401, description: 'Chưa xác thực người dùng' })
