@@ -38,11 +38,12 @@ export class BlogsService extends BaseService {
 
   async deleteBlog(id: string): Promise<any> {
     const blog = await this.findById(id);
+    console.log(blog)
     
     const rabbit = await this.amqpConnection.request<any>({
         exchange: 'healthline.upload.folder',
-        routingKey: 'delete_blog',
-        payload: blog.data.photo,
+        routingKey: 'delete_file',
+        payload: [blog.data.photo],
         timeout: 20000,
     })
 
