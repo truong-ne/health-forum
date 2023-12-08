@@ -20,7 +20,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PostAddDto } from '../dtos/postAdd.dto';
 import { PostUpdateDto } from '../dtos/postUpdate.dto';
 import { BlogsService } from '../services/blog.service';
-import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @Controller('blog')
 @Injectable()
