@@ -41,10 +41,11 @@ export class CommentsGateway {
     @UseGuards(JwtWsGuard)
     @SubscribeMessage('create')
     async createComment(
-        @MessageBody() data: CommentAddDto,
+        @MessageBody() data: any,
         @Req() req
     ) {
-        const comment = await this.commentsService.addComment(data, req.user.id) 
+        const dto: CommentAddDto = JSON.parse(data)
+        const comment = await this.commentsService.addComment(dto, req.user.id) 
         this.server.emit('comment', comment)
         return comment
     }
