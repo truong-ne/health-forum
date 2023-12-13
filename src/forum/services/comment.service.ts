@@ -41,19 +41,33 @@ export default class CommentsService extends BaseService {
     return this.commentModel.findOneAndDelete({ id: id, user: userId });
   }
 
-  findByIdAndUpdate(dto: CommentUpdateDto, id: string, options?: QueryOptions) {
+  async findByIdAndUpdate(dto: CommentUpdateDto, id: string, options?: QueryOptions) {
     const update: UpdateQuery<CommentType> = {
       $set: { text: dto.text },
     };
-    const comment = this.commentModel.findOneAndUpdate({ id: dto.commentId, user: id }, update, {
+    const comment = await this.commentModel.findOneAndUpdate({ _id: dto.commentId, user: id }, update, {
       new: options?.new ?? true,
       runValidators: options?.runValidators ?? true,
       ...options,
     });
     if (!comment) throw new NotFoundException('comment_not_found');
+    const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
+      exchange: 'healthline.user.information',
+      routingKey: 'user',
+      payload: [id],
+      timeout: 10000,
+    })
+
+    if(rabbitmq.code !== 200) {
+      return rabbitmq.message
+    }
+
     return {
-      "code": 200,
-      "message": "success"
+      id: comment.id,
+      user: rabbitmq.data[0],
+      text: comment.text,
+      likes: comment.likes,
+      createdAt: comment.createdAt
     }
   }
 
@@ -61,7 +75,7 @@ export default class CommentsService extends BaseService {
     const post = await this.postsService.findById(postId);
     if (!post) throw new NotFoundException("post_not_found")
 
-    const comments = await this.find({ postId: postId }, { sort: { createdAt: -1 } });
+    const comments = await this.find({ postId: postId }, { sort: { createdAt: 1 } });
   
     const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
       exchange: 'healthline.user.information',
@@ -71,7 +85,7 @@ export default class CommentsService extends BaseService {
     })
 
     if(rabbitmq.code !== 200) {
-      throw new BadRequestException(rabbitmq.message)
+      return rabbitmq.message
     }
 
     const data = []
@@ -81,7 +95,6 @@ export default class CommentsService extends BaseService {
           data.push({
             id: c.id,
             user: rabbitmq.data[i],
-            postId:c.postId,
             text: c.text,
             likes: c.likes,
             createdAt: c.createdAt
@@ -90,11 +103,7 @@ export default class CommentsService extends BaseService {
         }
     })
     
-    return {
-      "code": 200,
-      "message": "success",
-      "data": data
-    }
+    return data
   }
 
   async addComment(dto: CommentAddDto, userId: string): Promise<any> {
@@ -102,8 +111,9 @@ export default class CommentsService extends BaseService {
 
     if (!post) throw new NotFoundException("post_not_found")
 
+    var comment
     try {
-      await this.create({
+      comment = await this.create({
         ...dto,
         user: userId,
         likes: [],
@@ -111,7 +121,7 @@ export default class CommentsService extends BaseService {
         updatedAt: this.VNTime()
       });
     } catch (error) {
-      throw new BadRequestException("create_comment_failed")
+      throw new BadRequestException(error)
     }
 
     const isPostAuthor = userId === String((await post.data).user);
@@ -124,9 +134,23 @@ export default class CommentsService extends BaseService {
       );
     }
 
+    const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
+      exchange: 'healthline.user.information',
+      routingKey: 'user',
+      payload: [userId],
+      timeout: 10000,
+    })
+
+    if(rabbitmq.code !== 200) {
+      return rabbitmq.message
+    }
+
     return {
-      "code": 200,
-      "message": "success",
+      id: comment.id,
+      user: rabbitmq.data[0],
+      text: comment.text,
+      likes: comment.likes,
+      createdAt: comment.createdAt
     }
   }
 

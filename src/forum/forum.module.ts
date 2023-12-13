@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import NotificationModule from './modules/notification.module';
 import PostsModule from './modules/post.module';
 import CommentsModule from './modules/comment.module';
-import { EventsGateway } from './controllers/event.gateway';
+import { CommentsGateway } from './controllers/comment.gateway';
 import { RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
 import BlogsModule from './modules/blog.module';
 @Module({
@@ -13,6 +13,6 @@ import BlogsModule from './modules/blog.module';
     BlogsModule
   ],
   controllers: [],
-  providers: [EventsGateway],
+  providers: [CommentsGateway],
 })
 export class ForumModule {}

@@ -27,25 +27,6 @@ export default class CommentsController {
         @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {}
 
-    @ApiOperation({ summary: 'Xem các bình luận của bài đăng', description: 'Xem tất cả bình luận của bài đăng' })
-    @ApiResponse({ status: 200, description: 'Thành công' })
-    @ApiResponse({ status: 404, description: 'Không tìm thấy bài đăng' })
-    @Get('post/:postId')
-    async getPostComments(@Param('postId') postId: string) {
-        return await this.commentsService.getPostComments(postId) 
-    }
-
-    @UseGuards(JwtGuard)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Bình luận cho bài đăng', description: 'Viết bình luận cho bài đăng' })
-    @ApiResponse({ status: 200, description: 'Thành công' })
-    @ApiResponse({ status: 401, description: 'Chưa xác thực người dùng' })
-    @ApiResponse({ status: 404, description: 'Không tìm thấy bài đăng' })
-    @Post()
-    async addComment(@Body() dto: CommentAddDto, @Req() req) {
-        return await this.commentsService.addComment(dto, req.user.id)
-    }
-
     @UseGuards(JwtGuard)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Sửa bình luận cho bài đăng', description: 'Sửa bình luận cho bài đăng' })
