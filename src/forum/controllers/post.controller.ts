@@ -28,16 +28,6 @@ import { PostUpdateDto } from '../dtos/postUpdate.dto';
       private postsService: PostsService,
     ) {}
   
-    @Get('newsfeed')
-    @ApiOperation({ summary: 'Xem bài viết mới', description: 'Xem bài viết mới với số lượng và trang' })
-    @ApiResponse({ status: 200, description: 'Thành công' })
-    async getNewsfeedPosts(
-      @Query('limit') limitQ: number,
-      @Query('page') page: number,
-    ) {
-      return this.postsService.getNewsfeedPosts(limitQ, page)   
-    }
-  
     @ApiOperation({ summary: 'Xem bài viết của người dùng', description: 'Xem bài viết của người dùng' })
     @ApiResponse({ status: 200, description: 'Thành công' })
     @Get()

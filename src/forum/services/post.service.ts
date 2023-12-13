@@ -10,6 +10,7 @@ import { NotificationTypeEnum } from '../schemas/notificationTypes';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ExpectedReturnType, UserReturnType } from '../../config/ExpectedReturnType';
 import { PostDto } from '../dtos/post.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
 @Injectable()
 export class PostsService extends BaseService {
   constructor(@InjectModel('Post') private postModel: Model<PostType>,
@@ -122,24 +123,14 @@ export class PostsService extends BaseService {
     }
   }
 
-  async getNewsfeedPosts(limitQ: number, page: number): Promise<any> {
-    const limit = limitQ ?? 2;
-    const query = {};
+  async getNewsfeedPosts(): Promise<any> {
   
-    const posts = await getAdvanceResults(
-      this.getPostModel(),
-      query,
-      page,
-      limit,
-      undefined,
-      undefined,
-      { 'updatedAt': -1 },
-    );
+    const posts = await this.postModel.find()
 
     const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
       exchange: 'healthline.user.information',
       routingKey: 'user',
-      payload: posts.data.map(p => p.user),
+      payload: posts.map(p => p.user),
       timeout: 10000,
     })
 
@@ -148,7 +139,7 @@ export class PostsService extends BaseService {
     }
 
     const data = []
-    posts.data.forEach(p => {
+    posts.forEach(p => {
       for(let i=0; i<rabbitmq.data.length; i++)
         if(p.user === rabbitmq.data[i].uid) {
           data.push({
@@ -163,11 +154,7 @@ export class PostsService extends BaseService {
         }
     })
 
-    return {
-      "code": 200,
-      "message": "success",
-      "data": data
-    }
+    return data
   }
 
   async likePost(id: string, userId: string): Promise<any> {
@@ -218,5 +205,23 @@ export class PostsService extends BaseService {
       "code": 200,
       "message": "success"
     }
+  }
+
+  async updateMeilisearch(data: any) {
+    const response = await fetch('https://meilisearch-truongne.koyeb.app/indexes/post/documents', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer CHOPPER_LOVE_MEILISEARCH",
+        },
+        body: JSON.stringify(data),
+    });
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async getAllUsers() {
+      const data = await this.getNewsfeedPosts()
+
+      await this.updateMeilisearch(data)
   }
 }

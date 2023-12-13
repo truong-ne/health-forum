@@ -7,8 +7,10 @@ import { CommentSchema } from '../schemas/comment.schema';
 import PostsController from '../controllers/post.controller';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { PostConsumer } from '../consumers/post.consumer';
+import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     NotificationModule,
     RabbitMQModule.forRoot(RabbitMQModule, {
         exchanges: [
