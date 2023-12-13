@@ -28,18 +28,6 @@ import { PostUpdateDto } from '../dtos/postUpdate.dto';
       private postsService: PostsService,
     ) {}
   
-    @UseGuards(JwtGuard)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Tạo bài viết mới', description: 'Tạo bài viết mới' })
-    @ApiResponse({ status: 200, description: 'Thành công' })
-    @ApiResponse({ status: 400, description: 'Sai thông tin đầu vào' })
-    @ApiResponse({ status: 401, description: 'Chưa xác thực người dùng' })
-    @ApiResponse({ status: 404, description: 'Không tìm thấy bài đăng' })
-    @Post()
-    async create(@Body() dto: PostAddDto, @Req() req) {
-      return await this.postsService.createPost(dto, req.user.id)
-    }
-  
     @Get('newsfeed')
     @ApiOperation({ summary: 'Xem bài viết mới', description: 'Xem bài viết mới với số lượng và trang' })
     @ApiResponse({ status: 200, description: 'Thành công' })
@@ -64,29 +52,6 @@ import { PostUpdateDto } from '../dtos/postUpdate.dto';
     async getSingle(@Param('id') id: string) {
       return await this.postsService.findById(id);
     }
-  
-    @UseGuards(JwtGuard)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Cập nhật bài viết của người dùng', description: 'Cập nhật bài viết của người dùng' })
-    @ApiResponse({ status: 200, description: 'Thành công' })
-    @ApiResponse({ status: 401, description: 'Chưa xác thực người dùng' })
-    @ApiResponse({ status: 404, description: 'Không tìm thấy bài đăng' })
-    @Put(':id')
-    async updatePost(@Req() req, @Body() body: PostUpdateDto) {
-      return await this.postsService.findByIdAndUpdate(body, req.user.id);
-    }
-  
-    // @Get(':id/photo')
-    // async getPhoto(@Param('id') id: string, @Res() res: Response) {
-    //   const post = await this.postsService.findById(id, { projection: 'photo' });
-    //   if (!post) throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
-    //   if (!post.photo) throw new HttpException('No photo found', HttpStatus.NOT_FOUND);
-  
-    //   const photo = await this.photosService.findById(post.photo);
-  
-    //   res.set('Content-Type', photo.contentType);
-    //   return res.send(photo.data);
-    // }
   
     @UseGuards(JwtGuard)
     @ApiBearerAuth()

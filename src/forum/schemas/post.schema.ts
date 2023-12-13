@@ -9,7 +9,7 @@ export class Post {
   description: string;
 
   @Prop()
-  photo: string;
+  photo: string[];
 
   @Prop({ required: true })
   user: string;

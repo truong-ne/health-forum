@@ -9,6 +9,7 @@ import { PostUpdateDto } from '../dtos/postUpdate.dto';
 import { NotificationTypeEnum } from '../schemas/notificationTypes';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ExpectedReturnType, UserReturnType } from '../../config/ExpectedReturnType';
+import { PostDto } from '../dtos/post.dto';
 @Injectable()
 export class PostsService extends BaseService {
   constructor(@InjectModel('Post') private postModel: Model<PostType>,
@@ -33,23 +34,6 @@ export class PostsService extends BaseService {
       "code": 200,
       "message": "success",
       "data": post
-    }
-  }
-
-  findByIdAndUpdate(dto: PostUpdateDto, id: string, options?: QueryOptions) {
-    const update: UpdateQuery<PostType> = {
-      $set: { description: dto.description,
-              photo: dto.photo },
-    };
-    const post = this.postModel.findOneAndUpdate({ id: dto.id, user: id }, update, {
-      new: options?.new ?? true,
-      runValidators: options?.runValidators ?? true,
-      ...options,
-    });
-    if (!post) throw new NotFoundException('post_not_found');
-    return {
-      "code": 200,
-      "message": "success"
     }
   }
 
@@ -93,30 +77,48 @@ export class PostsService extends BaseService {
     return this.postModel;
   }
 
-  async createPost(dto: PostAddDto, userId: string): Promise<any> {
-    if (!dto.description && !dto.photo) {
-      throw new BadRequestException("the_post_needs_a_description_or_a_photo_or_both")
-    }
-
-    const post = { ...dto, user: userId, likes: [], createdAt: this.VNTime(), updatedAt: this.VNTime()};
-  
-    if (dto.photo) {
-      try {
-        await this.create({ ...post, photo: dto.photo })
-      } catch (error) {
-        throw new BadRequestException("created_post_failed")
-      }
+  async addOrUpdatePost(dto: PostDto): Promise<any> {
+    if(dto.id === "" || !dto.id) {
+        const post = { description: dto.description, photo: dto.photo, user: dto.userId, likes: [], createdAt: this.VNTime(), updatedAt: this.VNTime()};
+    
+        try {
+            await this.create(post)
+        } catch (error) {
+            return {
+                "code": 400,
+                "message": "created_post_failed"
+            }
+        }
+    
+        return {
+            "code": 200,
+            "message": "success"
+        }
     } else {
-      try {
-        await this.create(post)
-      } catch (error) {
-        throw new BadRequestException("created_post_failed")
-      }
-    }
-
-    return {
-      "code": 200,
-      "message": "success"
+        var update: UpdateQuery<PostType> 
+        if(dto.photo.length === 0)
+            update ={
+                $set: { description: dto.description,
+                        updatedAt: this.VNTime() 
+                    },
+            };
+        else
+            update = {
+                $set: { description: dto.description,
+                        photo: dto.photo,
+                        updatedAt: this.VNTime() 
+                    },
+            };
+            
+        const post = await this.postModel.findOneAndUpdate({ _id: dto.id }, update);
+        if (!post) return {
+            "code": 400,
+            "message": "blog_not_found"
+        }
+        return {
+            "code": 200,
+            "message": "success"
+        }
     }
   }
 

@@ -6,6 +6,7 @@ import { PostsService } from '../services/post.service';
 import { CommentSchema } from '../schemas/comment.schema';
 import PostsController from '../controllers/post.controller';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { PostConsumer } from '../consumers/post.consumer';
 @Module({
   imports: [
     NotificationModule,
@@ -14,6 +15,10 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
             {
                 name: 'healthline.user.information',
                 type: 'direct'
+            },
+            {
+              name: 'healthline.upload.folder',
+              type: 'direct'
             }
         ],
         uri: process.env.RABBITMQ_URL,
@@ -35,7 +40,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
     ]),
   ],
   controllers: [PostsController],
-  providers: [PostsService],
+  providers: [PostsService, PostConsumer],
   exports: [MongooseModule, PostsService],
 })
 export default class PostsModule {}
