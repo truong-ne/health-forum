@@ -76,6 +76,7 @@ export default class CommentsService extends BaseService {
     if (!post) throw new NotFoundException("post_not_found")
 
     const comments = await this.find({ postId: postId }, { sort: { createdAt: 1 } });
+    if (comments.length === 0) return []
   
     const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
       exchange: 'healthline.user.information',
