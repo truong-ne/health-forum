@@ -7,6 +7,7 @@ import * as dotenv from 'dotenv'
 import { CacheModule } from '@nestjs/cache-manager';
 import { RedisClientOptions } from 'redis';
 import { redisClientOption } from './config/database.config';
+import OtpModule from './otp/otp.module';
 
 dotenv.config()
 @Module({
@@ -19,6 +20,7 @@ dotenv.config()
     }),
     AuthModule,
     ForumModule,
+    OtpModule,
   ],
 })
 export class AppModule {}

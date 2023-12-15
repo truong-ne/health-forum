@@ -227,7 +227,7 @@ export class PostsService extends BaseService {
     });
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async getAllUsers() {
       const data = await this.getNewsfeedPosts()
 
