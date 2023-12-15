@@ -46,8 +46,15 @@ export class PostsService extends BaseService {
     const post = await this.findById(id);
     if ((await post.data).user.toString() !== userId)
       throw new NotFoundException('post_not_found');
+
+    const update = {
+      $set: { isActive: false,
+              updatedAt: this.VNTime() 
+          },
+    };
+
     try {
-      await this.delete(id)
+      await this.postModel.findOneAndUpdate({ _id: id }, update);
     } catch (error) {
       throw new BadRequestException("delete_post_failed")
     }
@@ -80,7 +87,7 @@ export class PostsService extends BaseService {
 
   async addOrUpdatePost(dto: PostDto): Promise<any> {
     if(dto.id === "" || !dto.id) {
-        const post = { description: dto.description, photo: dto.photo, user: dto.userId, likes: [], createdAt: this.VNTime(), updatedAt: this.VNTime()};
+        const post = { description: dto.description, photo: dto.photo, user: dto.userId, likes: [], isActive: true, createdAt: this.VNTime(), updatedAt: this.VNTime()};
     
         try {
             await this.create(post)

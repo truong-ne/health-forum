@@ -18,6 +18,9 @@ export class Post {
   likes: string[];
 
   @Prop()
+  isActive: boolean;
+
+  @Prop()
   createdAt: Date;
 
   @Prop()
