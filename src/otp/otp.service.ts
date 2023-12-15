@@ -24,4 +24,18 @@ export class OtpService extends BaseService {
 
         return otp.code
     }
+
+    async checkOtp(userId: string, code: string): Promise<any> {
+        const otp = await this.otpModel.findOne({ code: code, userId: userId })
+        if(!otp) return false
+
+        const OTP_EXPIRY_TIME = 10 * 60 * 1000;
+        const currentTime = Date.now();
+        if(currentTime - otp.timestamp <= OTP_EXPIRY_TIME) {
+            const otps = this.otpModel.find({ userId: userId })
+            await this.otpModel.deleteMany(otps)
+
+            return true
+        } else return false
+    }
 }

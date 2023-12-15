@@ -17,4 +17,13 @@ export class OtpConsumer {
     async forgetPassword(userId: string): Promise<any> {
         return await this.otpService.forgetPassword(userId)
     }
+
+    @RabbitRPC({
+        exchange: 'healthline.user.information',
+        routingKey: 'check_otp', 
+        queue: 'check_otp',
+    })
+    async checkOtp(data: any): Promise<any> {
+        return await this.otpService.checkOtp(data.userId, data.code)
+    }
 }
