@@ -127,6 +127,8 @@ export class PostsService extends BaseService {
   
     const posts = await this.postModel.find()
 
+    if(posts.length === 0) return []
+
     const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
       exchange: 'healthline.user.information',
       routingKey: 'user',
