@@ -8,7 +8,6 @@ import { BaseService, getAdvanceResults } from '../../config/base.service';
 import { PostUpdateDto } from '../dtos/postUpdate.dto';
 import { NotificationTypeEnum } from '../schemas/notificationTypes';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { ExpectedReturnType, UserReturnType } from '../../config/ExpectedReturnType';
 import { PostDto } from '../dtos/post.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 @Injectable()
@@ -136,7 +135,7 @@ export class PostsService extends BaseService {
 
     if(posts.length === 0) return []
 
-    const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
+    const rabbitmq = await this.amqpConnection.request<any>({
       exchange: 'healthline.user.information',
       routingKey: 'user',
       payload: posts.map(p => p.user),

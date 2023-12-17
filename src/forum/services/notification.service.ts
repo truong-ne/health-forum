@@ -8,7 +8,6 @@ import {
   NotificationTypeLikePost,
 } from '../schemas/notificationTypes';
 import { getAdvanceResults } from '../../config/base.service';
-import { ExpectedReturnType, UserReturnType } from '../../config/ExpectedReturnType';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 @Injectable()
@@ -48,7 +47,7 @@ export default class NotificationService {
       { createdAt: -1 },
     );
 
-    const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
+    const rabbitmq = await this.amqpConnection.request<any>({
       exchange: 'healthline.user.information',
       routingKey: 'user',
       payload: advancedResults.data.map(n => n.from),

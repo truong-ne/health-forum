@@ -3,7 +3,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, PopulateOptions, QueryOptions, UpdateQuery } from 'mongoose';
 import { BaseService, getAdvanceResults } from '../config/base.service';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { ExpectedReturnType, UserReturnType } from '../config/ExpectedReturnType';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Blog, BlogType } from './blog.schema';
 import { BlogDto, BlogIds } from './blog.dto';

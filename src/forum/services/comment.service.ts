@@ -5,7 +5,6 @@ import { Comment, CommentSchema, CommentType } from '../schemas/comment.schema';
 import NotificationService from '../services/notification.service';
 import { PostsService } from '../services/post.service';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { ExpectedReturnType, UserReturnType } from '../../config/ExpectedReturnType';
 import { CommentAddDto } from '../dtos/commentAdd.dto';
 import { BaseService } from '../../config/base.service';
 import { NotificationTypeEnum } from '../schemas/notificationTypes';
@@ -51,7 +50,7 @@ export default class CommentsService extends BaseService {
       ...options,
     });
     if (!comment) throw new NotFoundException('comment_not_found');
-    const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
+    const rabbitmq = await this.amqpConnection.request<any>({
       exchange: 'healthline.user.information',
       routingKey: 'user',
       payload: [id],
@@ -78,7 +77,7 @@ export default class CommentsService extends BaseService {
     const comments = await this.find({ postId: postId }, { sort: { createdAt: 1 } });
     if (comments.length === 0) return []
   
-    const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
+    const rabbitmq = await this.amqpConnection.request<any>({
       exchange: 'healthline.user.information',
       routingKey: 'user',
       payload: comments.map(c => c.user),
@@ -135,7 +134,7 @@ export default class CommentsService extends BaseService {
       );
     }
 
-    const rabbitmq = await this.amqpConnection.request<ExpectedReturnType<UserReturnType>>({
+    const rabbitmq = await this.amqpConnection.request<any>({
       exchange: 'healthline.user.information',
       routingKey: 'user',
       payload: [userId],
