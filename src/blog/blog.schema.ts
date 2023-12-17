@@ -9,6 +9,9 @@ export class Blog {
   title: string;
 
   @Prop()
+  tag: string[];
+
+  @Prop()
   content: string;
 
   @Prop()

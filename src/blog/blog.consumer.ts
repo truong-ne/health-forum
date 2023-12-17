@@ -1,8 +1,7 @@
 import { Body, Controller, Delete, Get, Inject, Injectable, Param, Post, Req, UseGuards } from "@nestjs/common"
 import { RabbitRPC } from "@golevelup/nestjs-rabbitmq"
-import { BlogsService } from "../services/blog.service"
-import { BlogDto } from "../dtos/blog.dto"
-
+import { BlogDto } from "./blog.dto"
+import { BlogsService } from "./blog.service"
 
 @Injectable()
 export class BlogConsumer {

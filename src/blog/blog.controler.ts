@@ -15,12 +15,13 @@ import {
     Res,
     UseGuards,
 } from '@nestjs/common';
-import { JwtGuard } from '../../auth/guards/jwt.guard';
+import { JwtGuard } from '../auth/guards/jwt.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { PostAddDto } from '../dtos/postAdd.dto';
-import { PostUpdateDto } from '../dtos/postUpdate.dto';
-import { BlogsService } from '../services/blog.service';
-import { AdminGuard } from '../../auth/guards/admin.guard';
+import { PostAddDto } from '../forum/dtos/postAdd.dto';
+import { PostUpdateDto } from '../forum/dtos/postUpdate.dto';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { BlogsService } from './blog.service';
+import { BlogIds } from './blog.dto';
 
 @Controller('blog')
 @Injectable()
@@ -30,10 +31,18 @@ export default class BlogsController {
     ) {}
     @ApiOperation({ summary: 'Xem blog', description: 'Xem blog' })
     @ApiResponse({ status: 200, description: 'Thành công' })
-    @Get()
-    async getAllBlogs() {
-        return this.blogsService.getAllBlogs();
+    @Get('/:page/:limit')
+    async getAllBlogs(@Param('page') page: number, @Param('limit') limit: number) {
+        return this.blogsService.getAllBlogs(page, limit);
     }
+
+    @ApiOperation({ summary: 'Xem blog', description: 'Xem blog' })
+    @ApiResponse({ status: 200, description: 'Thành công' })
+    @Get()
+    async getAllBlogsByIds(@Body() ids: BlogIds) {
+        return this.blogsService.getAllBlogsByIds(ids);
+    }
+
 
     @ApiOperation({ summary: 'Xem chi tiết blog', description: 'Xem chi tiết blog' })
     @ApiResponse({ status: 200, description: 'Thành công' })

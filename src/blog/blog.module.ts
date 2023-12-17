@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { PostsService } from '../services/post.service';
-import PostsController from '../controllers/post.controller';
-import { BlogSchema } from '../schemas/blog.schema';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
-import { BlogsService } from '../services/blog.service';
-import BlogsController from '../controllers/blog.controler';
-import { BlogConsumer } from '../consumers/blog.consumer';
 import { ScheduleModule } from '@nestjs/schedule';
+import BlogsController from './blog.controler';
+import { BlogSchema } from './blog.schema';
+import { BlogConsumer } from './blog.consumer';
+import { BlogsService } from './blog.service';
+import { BlogsServiceImpl } from './blog.service.impl';
+
 @Module({
   imports: [
     RabbitMQModule.forRoot(RabbitMQModule, {
@@ -24,7 +24,13 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
   ],
   controllers: [BlogsController],
-  providers: [BlogsService, BlogConsumer],
-  exports: [MongooseModule, BlogsService],
+  providers: [{
+    provide: BlogsService,
+    useClass: BlogsServiceImpl
+  }, BlogConsumer],
+  exports: [{
+    provide: BlogsService,
+    useClass: BlogsServiceImpl
+  }, MongooseModule],
 })
 export default class BlogsModule {}
