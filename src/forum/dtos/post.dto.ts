@@ -18,3 +18,10 @@ export class PostDto {
     @ApiProperty({ example: 'user id' })
     userId: string
 }
+
+export class PostIds {
+    @IsArray()
+    @IsNotEmpty()
+    @ApiProperty({ example: '[]' })
+    ids: string[]
+}

@@ -21,6 +21,8 @@ import { JwtGuard } from '../../auth/guards/jwt.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PostAddDto } from '../dtos/postAdd.dto';
 import { PostUpdateDto } from '../dtos/postUpdate.dto';
+import { DoctorGuard } from 'src/auth/guards/doctor.guard';
+import { PostIds } from '../dtos/post.dto';
   @Controller('posts')
   @Injectable()
   export default class PostsController {
@@ -28,22 +30,21 @@ import { PostUpdateDto } from '../dtos/postUpdate.dto';
       private postsService: PostsService,
     ) {}
   
-    @ApiOperation({ summary: 'Xem bài viết của người dùng', description: 'Xem bài viết của người dùng' })
+    @ApiOperation({ summary: 'Xem blog', description: 'Xem blog' })
+    @ApiResponse({ status: 200, description: 'Thành công' })
+    @Get('/:page/:limit')
+    async getAllBlogs(@Param('page') page: number, @Param('limit') limit: number) {
+        return this.postsService.getAllPosts(page, limit);
+    }
+
+    @ApiOperation({ summary: 'Xem blog', description: 'Xem blog' })
     @ApiResponse({ status: 200, description: 'Thành công' })
     @Get()
-    async getAll(@Query('user') userId: string) {
-      return this.postsService.getAllPostsOfSingleUser(userId);
+    async getAllBlogsByIds(@Body() ids: PostIds) {
+        return this.postsService.getAllPostsByIds(ids);
     }
   
-    @ApiOperation({ summary: 'Xem bài viết của người dùng', description: 'Xem bài viết của người dùng' })
-    @ApiResponse({ status: 200, description: 'Thành công' })
-    @ApiResponse({ status: 404, description: 'Không tìm thấy bài đăng' })
-    @Get(':id')
-    async getSingle(@Param('id') id: string) {
-      return await this.postsService.findById(id);
-    }
-  
-    @UseGuards(JwtGuard)
+    @UseGuards(DoctorGuard)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Xóa bài viết của người dùng', description: 'Xóa bài viết của người dùng' })
     @ApiResponse({ status: 200, description: 'Thành công' })
@@ -55,7 +56,7 @@ import { PostUpdateDto } from '../dtos/postUpdate.dto';
       return await this.postsService.deletePost(id, req.user.id)
     }
   
-    @UseGuards(JwtGuard)
+    @UseGuards(DoctorGuard)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Thích bài viết của người dùng', description: 'Thích bài viết của người dùng' })
     @ApiResponse({ status: 200, description: 'Thành công' })
@@ -66,7 +67,7 @@ import { PostUpdateDto } from '../dtos/postUpdate.dto';
       return await this.postsService.likePost(id, req.user.id)
     }
   
-    @UseGuards(JwtGuard)
+    @UseGuards(DoctorGuard)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Bỏ thích bài viết của người dùng', description: 'Bỏ thích bài viết của người dùng' })
     @ApiResponse({ status: 200, description: 'Thành công' })

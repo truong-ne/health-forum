@@ -8,7 +8,7 @@ import { BaseService, getAdvanceResults } from '../../config/base.service';
 import { PostUpdateDto } from '../dtos/postUpdate.dto';
 import { NotificationTypeEnum } from '../schemas/notificationTypes';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { PostDto } from '../dtos/post.dto';
+import { PostDto, PostIds } from '../dtos/post.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 @Injectable()
 export class PostsService extends BaseService {
@@ -129,40 +129,104 @@ export class PostsService extends BaseService {
     }
   }
 
-  async getNewsfeedPosts(): Promise<any> {
-  
-    const posts = await this.postModel.find()
-
-    if(posts.length === 0) return []
-
-    const rabbitmq = await this.amqpConnection.request<any>({
+  async getDataRabbitMq(ids: string[]) {
+    const users = await this.amqpConnection.request<any>({
       exchange: 'healthline.user.information',
       routingKey: 'user',
-      payload: posts.map(p => p.user),
+      payload: ids,
       timeout: 10000,
     })
 
-    if(rabbitmq.code !== 200) {
-      throw new BadRequestException(rabbitmq.message)
+    if(users.code !== 200) {
+      const doctor = await this.amqpConnection.request<any>({
+        exchange: 'healthline.doctor.information',
+        routingKey: 'doctor',
+        payload: ids,
+        timeout: 10000,
+      })
+
+      if(doctor.code !== 200)
+        return doctor
+
+      return doctor.data
     }
+
+    if(users.data.length < ids.length) {
+      const doctor = await this.amqpConnection.request<any>({
+        exchange: 'healthline.doctor.information',
+        routingKey: 'doctor',
+        payload: ids,
+        timeout: 10000,
+      })
+
+      if(doctor.code !== 200)
+        return doctor
+
+      return [...doctor.data, ...users.data]
+    }
+
+    return users.data
+  }
+
+  async dataPosts(posts: PostType[]) {
+    if(posts.length === 0) return []
+
+    const rabbitmq = await this.getDataRabbitMq(posts.map(p => p.user))
 
     const data = []
     posts.forEach(p => {
-      for(let i=0; i<rabbitmq.data.length; i++)
-        if(p.user === rabbitmq.data[i].uid) {
+      for(let item of rabbitmq)
+        if(p.user === item.uid) {
           data.push({
             id: p.id,
             description: p.description,
             photo: p.photo,
-            user: rabbitmq.data[i],
+            user: item,
             likes: p.likes,
             updatedAt: p.updatedAt,
           })
           break
         }
     })
-
     return data
+  }
+
+  async getNewsfeedPosts(): Promise<any> {
+  
+    const posts = await this.postModel.find()
+
+    return await this.dataPosts(posts)
+  }
+
+  async getAllPosts(page: number, limit: number): Promise<any> {
+    const posts = await getAdvanceResults(
+        this.postModel,
+        {},
+        page,
+        limit,
+        undefined,
+        undefined,
+        { 'updatedAt': -1 },
+    );
+    
+    const data = await this.dataPosts(posts.data)
+    
+    return {
+      "code": 200,
+      "message": "success",
+      "data": data
+    }
+  }
+
+  async getAllPostsByIds(ids: PostIds): Promise<any> {
+    const posts = await this.postModel.find({ "_id": { $in: ids.ids }}).sort({ 'updatedAt': -1 })
+    
+    const data = await this.dataPosts(posts)
+    return {
+      "code": 200,
+      "message": "success",
+      "data": data
+    }
   }
 
   async likePost(id: string, userId: string): Promise<any> {
@@ -215,21 +279,10 @@ export class PostsService extends BaseService {
     }
   }
 
-  async updateMeilisearch(data: any) {
-    const response = await fetch('https://meilisearch-truongne.koyeb.app/indexes/post/documents', {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer CHOPPER_LOVE_MEILISEARCH",
-        },
-        body: JSON.stringify(data),
-    });
-  }
-
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async getAllUsers() {
       const data = await this.getNewsfeedPosts()
 
-      await this.updateMeilisearch(data)
+      await this.updateMeilisearch('post', data)
   }
 }
