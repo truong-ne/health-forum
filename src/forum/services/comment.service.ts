@@ -134,20 +134,11 @@ export default class CommentsService extends BaseService {
       );
     }
 
-    const rabbitmq = await this.amqpConnection.request<any>({
-      exchange: 'healthline.user.information',
-      routingKey: 'user',
-      payload: [userId],
-      timeout: 10000,
-    })
-
-    if(rabbitmq.code !== 200) {
-      return rabbitmq.message
-    }
+    const user =await this.postsService.getDataRabbitMq([userId])
 
     return {
       id: comment.id,
-      user: rabbitmq.data[0],
+      user: user[0],
       text: comment.text,
       likes: comment.likes,
       createdAt: comment.createdAt
