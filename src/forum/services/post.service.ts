@@ -138,6 +138,8 @@ export class PostsService extends BaseService {
     })
 
     if(users.code !== 200) {
+    console.log(users.code !== 200)
+
       const doctor = await this.amqpConnection.request<any>({
         exchange: 'healthline.doctor.information',
         routingKey: 'doctor',
@@ -171,8 +173,8 @@ export class PostsService extends BaseService {
   async dataPosts(posts: PostType[]) {
     if(posts.length === 0) return []
 
-    const rabbitmq = await this.getDataRabbitMq(posts.map(p => p.user))
-
+    const rabbitmq = await this.getDataRabbitMq(Array.from(new Set(posts.map(p => p.user))))
+    
     const data = []
     posts.forEach(p => {
       for(let item of rabbitmq)
@@ -282,7 +284,6 @@ export class PostsService extends BaseService {
   @Cron(CronExpression.EVERY_10_MINUTES)
   async getAllUsers() {
       const data = await this.getNewsfeedPosts()
-
       await this.updateMeilisearch('post', data)
   }
 }
