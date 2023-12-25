@@ -2,7 +2,7 @@ import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt"
 import { Request } from "express";
 
-export class JwtWsStrategy extends PassportStrategy(Strategy, 'doctor-ws') {
+export class DoctorWsStrategy extends PassportStrategy(Strategy, 'doctor-ws') {
     constructor() {
         super({
           jwtFromRequest: ExtractJwt.fromExtractors([
