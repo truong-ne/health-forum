@@ -17,6 +17,7 @@ export class PostsService extends BaseService {
   private notificationService: NotificationService,
   private readonly amqpConnection: AmqpConnection) {
     super()
+    this.getAllUsers()
   }
 
   create(post: Post) {
@@ -57,6 +58,9 @@ export class PostsService extends BaseService {
     } catch (error) {
       throw new BadRequestException("delete_post_failed")
     }
+
+    await this.deleteIndexMeilisearch("post", id)
+
     return {
       "code": 200,
       "message": "success"
@@ -195,7 +199,7 @@ export class PostsService extends BaseService {
 
   async getNewsfeedPosts(): Promise<any> {
   
-    const posts = await this.postModel.find()
+    const posts = await this.postModel.find({ isActive: true })
 
     return await this.dataPosts(posts)
   }
@@ -203,7 +207,7 @@ export class PostsService extends BaseService {
   async getAllPosts(page: number, limit: number): Promise<any> {
     const posts = await getAdvanceResults(
         this.postModel,
-        {},
+        { isActive: true },
         page,
         limit,
         undefined,
@@ -221,7 +225,7 @@ export class PostsService extends BaseService {
   }
 
   async getAllPostsByIds(ids: PostIds): Promise<any> {
-    const posts = await this.postModel.find({ "_id": { $in: ids.ids }}).sort({ 'updatedAt': -1 })
+    const posts = await this.postModel.find({ "_id": { $in: ids.ids }, "isActive": true }).sort({ 'updatedAt': -1 })
     
     const data = await this.dataPosts(posts)
     return {
