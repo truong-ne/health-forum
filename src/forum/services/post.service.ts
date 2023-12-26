@@ -142,8 +142,6 @@ export class PostsService extends BaseService {
     })
 
     if(users.code !== 200) {
-    console.log(users.code !== 200)
-
       const doctor = await this.amqpConnection.request<any>({
         exchange: 'healthline.doctor.information',
         routingKey: 'doctor',

@@ -76,25 +76,16 @@ export default class CommentsService extends BaseService {
 
     const comments = await this.find({ postId: postId }, { sort: { createdAt: 1 } });
     if (comments.length === 0) return []
-  
-    const rabbitmq = await this.amqpConnection.request<any>({
-      exchange: 'healthline.user.information',
-      routingKey: 'user',
-      payload: comments.map(c => c.user),
-      timeout: 10000,
-    })
 
-    if(rabbitmq.code !== 200) {
-      return rabbitmq.message
-    }
+    const rabbitmq = await this.postsService.getDataRabbitMq(Array.from(new Set(comments.map(c => c.user))))
 
     const data = []
     comments.forEach(c => {
-      for(let i=0; i<rabbitmq.data.length; i++)
-        if(c.user === rabbitmq.data[i].uid) {
+      for(let item of rabbitmq)
+        if(c.user === item.uid) {
           data.push({
             id: c.id,
-            user: rabbitmq.data[i],
+            user: item,
             text: c.text,
             likes: c.likes,
             createdAt: c.createdAt
