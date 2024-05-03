@@ -4,10 +4,13 @@ import { NotificationSchema } from '../schemas/notification.schema';
 import NotificationService from '../services/notification.service';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import * as dotenv from 'dotenv'
+import PostsModule from './post.module';
+import NotificationsController from '../controllers/notification.controller';
 
 dotenv.config()
 @Module({
   imports: [
+    PostsModule,
     MongooseModule.forFeature([{ name: 'Notification', schema: NotificationSchema }]),
     RabbitMQModule.forRoot(RabbitMQModule, {
         exchanges: [
@@ -21,7 +24,7 @@ dotenv.config()
         enableControllerDiscovery: true
     }),
   ],
-  controllers: [],
+  controllers: [NotificationsController],
   providers: [NotificationService],
   exports: [NotificationService],
 })

@@ -3,20 +3,24 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, QueryOptions } from 'mongoose';
 import { NotificationType } from '../schemas/notification.schema';
 import {
+  NotificationTypeConsultation,
   NotificationTypeEnum,
-  NotificationTypeFriendRequest,
   NotificationTypeLikePost,
 } from '../schemas/notificationTypes';
-import { getAdvanceResults } from '../../config/base.service';
+import { BaseService, getAdvanceResults } from '../../config/base.service';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { PostsService } from './post.service';
 
 @Injectable()
-export default class NotificationService {
+export default class NotificationService extends BaseService {
   constructor(
     @InjectModel('Notification')
     readonly notificationModel: Model<NotificationType>,
-    private readonly amqpConnection: AmqpConnection
-  ) {}
+    private postsService: PostsService,
+    public readonly amqpConnection: AmqpConnection
+  ) {
+    super()
+  }
 
   async sendPostNotificationToUser(from: string, to: string, postId: string, type: NotificationTypeEnum) {
     const notification: NotificationTypeLikePost = {
@@ -28,56 +32,93 @@ export default class NotificationService {
       },
     };
     await this.notificationModel.create(notification);
+
+    const post = (await this.postsService.findById(postId)).data
+    const sender = await this.getDataRabbitMq([from])
+
+    return {
+      from: sender[0],
+      to: to,
+      type: type,
+      content: {
+        image: post.photo[0],
+        description: post.description
+      },
+      seen: false
+    }
   }
 
-  async getUserNotifications(limitQ: number, page: number, userId: string): Promise<any> {
-    const limit = limitQ ?? 10;
+  async sendConsultationNotificationToUser(from: string, to: string, consultationId: string, type: NotificationTypeEnum) {
+    const notification: NotificationTypeConsultation = {
+      from,
+      to,
+      type: type,
+      content: {
+        consultationId,
+      }
+    };
+    await this.notificationModel.create(notification);
 
+    const consultation = await this.getConsultationInformation([consultationId])
+    const sender = await this.getDataRabbitMq([from])
+
+    return {
+      from: sender[0],
+      to: to,
+      type: type,
+      content: consultation,
+      seen: false
+    }
+  }
+
+  async getUserNotifications(userId: string): Promise<any> {
     const totalUnseeNotifications = await this.notificationModel
       .find({ to: userId, seen: false })
       .countDocuments();
 
-    const advancedResults = await getAdvanceResults(
-      this.notificationModel,
-      { to: userId },
-      page,
-      limit,
-      undefined,
-      undefined,
-      { createdAt: -1 },
-    );
 
-    const rabbitmq = await this.amqpConnection.request<any>({
-      exchange: 'healthline.user.information',
-      routingKey: 'user',
-      payload: advancedResults.data.map(n => n.from),
-      timeout: 10000,
-    })
-
-    if(rabbitmq.code !== 200) {
-      throw new BadRequestException(rabbitmq.message)
-    }
-
+    const notifications = await this.notificationModel.find({ to: userId }, undefined, { sort: { createdAt: -1 } });
+    const rabbitmq = await this.getDataRabbitMq(notifications.map(n => n.from))
     const data = []
-    advancedResults.data.forEach(n => {
-      for(let i=0; i<rabbitmq.data.length; i++)
-        if(n.from === rabbitmq.data[i].uid) {
+    for(let n of notifications) {
+      for(let item of rabbitmq)
+        if(n.from === item.id) {
+          var content
+          if (
+            n.type === NotificationTypeEnum.postLike ||
+            n.type === NotificationTypeEnum.postCreate ||
+            n.type === NotificationTypeEnum.postCommentAdded ||
+            n.type === NotificationTypeEnum.postCommentLiked
+          ) {
+            const temp: any = n
+            const post = (await this.postsService.findById(temp.content.postId)).data
+            content = {
+              image: post.photo[0],
+              description: post.description
+            }
+          } 
+          if (
+            n.type === NotificationTypeEnum.consultationRequest ||
+            n.type === NotificationTypeEnum.consultationConfirmed ||
+            n.type === NotificationTypeEnum.consultationDenied ||
+            n.type === NotificationTypeEnum.consultationCanceled
+          ) {
+            const temp: any = n
+            const consultation = await this.getConsultationInformation([temp.content.consultationId])
+            content = consultation
+          }
           data.push({
             id: n.id,
-            from: rabbitmq.data[i],
+            from: item,
             type:n.type,
-            content: n.content,
+            content: content,
             seen: n.seen
-          })
+          })          
           break
-        }
-    })
-
-    return {
-      "code": 200,
-      "message": "success",
-      "data": { notification: data, totalUnseen: totalUnseeNotifications }
+        }      
     }
+
+    return { notification: data, totalUnseen: totalUnseeNotifications }
   }
 
   async markSeen(id: string, options?: QueryOptions): Promise<any> {

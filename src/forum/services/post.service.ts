@@ -2,20 +2,14 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, PopulateOptions, QueryOptions, UpdateQuery } from 'mongoose';
 import { Post, PostType } from '../schemas/post.schema';
-import NotificationService from './notification.service';
-import { PostAddDto } from '../dtos/postAdd.dto';
 import { BaseService, getAdvanceResults } from '../../config/base.service';
-import { PostUpdateDto } from '../dtos/postUpdate.dto';
-import { NotificationTypeEnum } from '../schemas/notificationTypes';
-import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { PostDto, PostIds } from '../dtos/post.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 @Injectable()
 export class PostsService extends BaseService {
   constructor(@InjectModel('Post') private postModel: Model<PostType>,
   @InjectModel('Comment') private commentModel: Model<Comment>,
-  private notificationService: NotificationService,
-  private readonly amqpConnection: AmqpConnection) {
+  ) {
     super()
     this.getAllUsers()
   }
@@ -133,45 +127,6 @@ export class PostsService extends BaseService {
     }
   }
 
-  async getDataRabbitMq(ids: string[]) {
-    const users = await this.amqpConnection.request<any>({
-      exchange: 'healthline.user.information',
-      routingKey: 'user',
-      payload: ids,
-      timeout: 10000,
-    })
-
-    if(users.code !== 200) {
-      const doctor = await this.amqpConnection.request<any>({
-        exchange: 'healthline.doctor.information',
-        routingKey: 'doctor',
-        payload: ids,
-        timeout: 10000,
-      })
-
-      if(doctor.code !== 200)
-        return doctor
-
-      return doctor.data
-    }
-
-    if(users.data.length < ids.length) {
-      const doctor = await this.amqpConnection.request<any>({
-        exchange: 'healthline.doctor.information',
-        routingKey: 'doctor',
-        payload: ids,
-        timeout: 10000,
-      })
-
-      if(doctor.code !== 200)
-        return doctor
-
-      return [...doctor.data, ...users.data]
-    }
-
-    return users.data
-  }
-
   async dataPosts(posts: PostType[]) {
     if(posts.length === 0) return []
 
@@ -192,7 +147,7 @@ export class PostsService extends BaseService {
           break
         }
     })
-    return data
+    return posts
   }
 
   async getNewsfeedPosts(): Promise<any> {
@@ -246,16 +201,6 @@ export class PostsService extends BaseService {
       },
       { runValidators: true },
     );
-
-    const isPostCreator = userId === String((await post.data).user);
-    if (!isPostCreator) {
-      this.notificationService.sendPostNotificationToUser(
-        userId,
-        (await post.data).user,
-        (await post.data).id,
-        NotificationTypeEnum.postLike,
-      );
-    }
 
     return {
       "code": 200,

@@ -11,7 +11,6 @@ import * as dotenv from 'dotenv'
 dotenv.config()
 @Module({
   imports: [
-    NotificationModule,
     forwardRef(() => PostsModule),
     MongooseModule.forFeature([{ name: 'Comment', schema: CommentSchema }]),
     RabbitMQModule.forRoot(RabbitMQModule, {

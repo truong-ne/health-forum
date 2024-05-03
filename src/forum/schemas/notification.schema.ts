@@ -53,10 +53,12 @@ async function isValidContent(content: any, notificationType: NotificationTypeEn
     return NotificationContentSchemas.postContent.isValidSync(content);
   }
   if (
-    notificationType === NotificationTypeEnum.friendRequest ||
-    notificationType === NotificationTypeEnum.friendRequestAccepted
+    notificationType === NotificationTypeEnum.consultationRequest ||
+    notificationType === NotificationTypeEnum.consultationConfirmed ||
+    notificationType === NotificationTypeEnum.consultationDenied ||
+    notificationType === NotificationTypeEnum.consultationCanceled
   ) {
-    return NotificationContentSchemas.friendRequestContent.isValidSync(content);
+    return NotificationContentSchemas.consultationContent.isValidSync(content);
   }
   return false;
 }

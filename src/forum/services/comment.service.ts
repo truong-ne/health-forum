@@ -4,19 +4,18 @@ import { FilterQuery, Model, PopulateOptions, QueryOptions, UpdateQuery } from '
 import { Comment, CommentSchema, CommentType } from '../schemas/comment.schema';
 import NotificationService from '../services/notification.service';
 import { PostsService } from '../services/post.service';
-import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { CommentAddDto } from '../dtos/commentAdd.dto';
 import { BaseService } from '../../config/base.service';
 import { NotificationTypeEnum } from '../schemas/notificationTypes';
 import { CommentUpdateDto } from '../dtos/commentUpdate.dto';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 @Injectable()
 export default class CommentsService extends BaseService {
   constructor(
     @InjectModel('Comment') public commentModel: Model<CommentType>, 
     private postsService: PostsService,
-    private notificationsService: NotificationService,
-    private readonly amqpConnection: AmqpConnection
+    public readonly amqpConnection: AmqpConnection
   ) {
     super()
   }
@@ -77,7 +76,7 @@ export default class CommentsService extends BaseService {
     const comments = await this.find({ postId: postId }, { sort: { createdAt: 1 } });
     if (comments.length === 0) return []
 
-    const rabbitmq = await this.postsService.getDataRabbitMq(Array.from(new Set(comments.map(c => c.user))))
+    const rabbitmq = await this.getDataRabbitMq(Array.from(new Set(comments.map(c => c.user))))
 
     const data = []
     comments.forEach(c => {
@@ -94,7 +93,7 @@ export default class CommentsService extends BaseService {
         }
     })
     
-    return data
+    return comments
   }
 
   async addComment(dto: CommentAddDto, userId: string): Promise<any> {
@@ -115,17 +114,7 @@ export default class CommentsService extends BaseService {
       throw new BadRequestException(error)
     }
 
-    const isPostAuthor = userId === String((await post.data).user);
-    if (!isPostAuthor) {
-      this.notificationsService.sendPostNotificationToUser(
-          userId,
-          (await post.data).user,
-          (await post.data).id,
-          NotificationTypeEnum.postCommentAdded,
-      );
-    }
-
-    const user =await this.postsService.getDataRabbitMq([userId])
+    const user =await this.getDataRabbitMq([userId])
 
     return {
       id: comment.id,
@@ -148,16 +137,6 @@ export default class CommentsService extends BaseService {
       },
       { runValidators: true },
     );
-
-    const isPostCreator = userId === String(comment.user);
-    if (!isPostCreator) {
-      this.notificationsService.sendPostNotificationToUser(
-        userId,
-        comment.user,
-        String(comment.postId),
-        NotificationTypeEnum.postCommentLiked,
-      );
-    }
 
     return {
       "code": 200,

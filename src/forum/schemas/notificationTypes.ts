@@ -5,24 +5,28 @@ export enum NotificationTypeEnum {
   postCreate = 'postCreate',
   postCommentAdded = 'postCommentAdded',
   postCommentLiked = 'postCommentLiked',
-  friendRequest = 'friendRequest',
-  friendRequestAccepted = 'friendRequestAccepted',
+  consultationRequest = 'consultationRequest',
+  consultationConfirmed = 'consultationConfirmed',
+  consultationDenied = 'consultationDenied',
+  consultationCanceled = 'consultationCanceled',
 }
 export const NotificationsTypeList = [
   'postLike',
   'postCreate',
   'postCommentAdded',
   'postCommentLiked',
-  'friendRequest',
-  'friendRequestAccepted',
+  'consultationRequest',
+  'consultationConfirmed',
+  'consultationDenied',
+  'consultationCanceled',
 ];
 
 export const NotificationContentSchemas = {
   postContent: yup.object().shape({
     postId: yup.string().required().strict(true),
   }),
-  friendRequestContent: yup.object().shape({
-    friendRequestId: yup.string().required().strict(true),
+  consultationContent: yup.object().shape({
+    consultationId: yup.string().required().strict(true),
   }),
 };
 
@@ -38,8 +42,8 @@ export interface NotificationTypeLikePost extends BaseNotificationType {
   };
 }
 
-export interface NotificationTypeFriendRequest extends BaseNotificationType {
+export interface NotificationTypeConsultation extends BaseNotificationType {
   content: {
-    friendRequestId: string;
+    consultationId: string;
   };
 }

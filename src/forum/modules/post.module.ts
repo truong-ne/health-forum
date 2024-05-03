@@ -11,7 +11,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    NotificationModule,
     RabbitMQModule.forRoot(RabbitMQModule, {
         exchanges: [
             {

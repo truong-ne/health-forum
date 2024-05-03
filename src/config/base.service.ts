@@ -1,4 +1,4 @@
-import { ModulesContainer } from '@nestjs/core';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { AnyArray, Model, PopulateOptions } from 'mongoose';
 
 export const getAdvanceResults = async <T extends unknown>(
@@ -31,6 +31,57 @@ export const getAdvanceResults = async <T extends unknown>(
 export abstract class BaseService {
   constructor() {
 
+  }
+  public readonly amqpConnection: AmqpConnection
+
+  async getDataRabbitMq(ids: string[]) {
+    const users = await this.amqpConnection.request<any>({
+      exchange: 'healthline.user.information',
+      routingKey: 'user',
+      payload: ids,
+      timeout: 10000,
+    })
+
+    if(users.code !== 200) {
+      const doctor = await this.amqpConnection.request<any>({
+        exchange: 'healthline.doctor.information',
+        routingKey: 'doctor',
+        payload: ids,
+        timeout: 10000,
+      })
+
+      if(doctor.code !== 200)
+        return doctor
+
+      return doctor.data
+    }
+
+    if(users.data.length < ids.length) {
+      const doctor = await this.amqpConnection.request<any>({
+        exchange: 'healthline.doctor.information',
+        routingKey: 'doctor',
+        payload: ids,
+        timeout: 10000,
+      })
+
+      if(doctor.code !== 200)
+        return doctor
+
+      return [...doctor.data, ...users.data]
+    }
+
+    return users.data
+  }
+
+  async getConsultationInformation(ids: string[]) {
+    const consultations = await this.amqpConnection.request<any>({
+      exchange: 'healthline.user.information',
+      routingKey: 'consultation',
+      payload: ids,
+      timeout: 10000,
+    })
+
+    return consultations
   }
 
   VNTime(n = 0) {

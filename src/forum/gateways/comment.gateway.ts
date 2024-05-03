@@ -36,7 +36,7 @@ export class CommentsGateway {
     async findAllComment(@MessageBody() postId: string) {
         const data = await this.commentsService.getPostComments(postId)
         this.server.emit('findAll', data)
-        return data
+        // return data
     }
 
     @UseGuards(JwtWsGuard)
