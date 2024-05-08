@@ -134,10 +134,10 @@ export class BlogsServiceImpl extends BaseService implements BlogsService {
     }
   }
 
-    // @Cron(CronExpression.EVERY_10_MINUTES)
-    // async getAllBlog() {
-    //     const blogs = await this.blogModel.find()
+    @Cron(CronExpression.EVERY_10_MINUTES)
+    async getAllBlog() {
+        const blogs = await this.blogModel.find()
 
-    //     await this.updateMeilisearch('blog',blogs)
-    // }
+        await this.updateMeilisearch('blog',blogs)
+    }
 }
