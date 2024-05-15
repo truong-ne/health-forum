@@ -137,7 +137,7 @@ export class PostsService extends BaseService {
     const data = []
     posts.forEach(p => {
       for(let item of rabbitmq)
-        if(p.user === item.uid) {
+        if(p.user === item.id) {
           data.push({
             id: p.id,
             description: p.description,
@@ -149,7 +149,7 @@ export class PostsService extends BaseService {
           break
         }
     })
-    return posts
+    return data
   }
 
   async getNewsfeedPosts(): Promise<any> {

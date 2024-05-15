@@ -27,21 +27,21 @@ export class OtpConsumer {
         return await this.otpService.checkOtp(data.userId, data.code)
     }
 
-    @RabbitRPC({
-        exchange: 'healthline.doctor.information',
-        routingKey: 'create_otp', 
-        queue: 'create_otp',
-    })
-    async forgetPasswordDoctor(userId: string): Promise<any> {
-        return await this.otpService.forgetPassword(userId)
-    }
+    // @RabbitRPC({
+    //     exchange: 'healthline.doctor.information',
+    //     routingKey: 'create_otp', 
+    //     queue: 'create_otp',
+    // })
+    // async forgetPasswordDoctor(userId: string): Promise<any> {
+    //     return await this.otpService.forgetPassword(userId)
+    // }
 
-    @RabbitRPC({
-        exchange: 'healthline.doctor.information',
-        routingKey: 'check_otp', 
-        queue: 'check_otp',
-    })
-    async checkOtpDoctor(data: any): Promise<any> {
-        return await this.otpService.checkOtp(data.userId, data.code)
-    }
+    // @RabbitRPC({
+    //     exchange: 'healthline.doctor.information',
+    //     routingKey: 'check_otp', 
+    //     queue: 'check_otp',
+    // })
+    // async checkOtpDoctor(data: any): Promise<any> {
+    //     return await this.otpService.checkOtp(data.userId, data.code)
+    // }
 }
