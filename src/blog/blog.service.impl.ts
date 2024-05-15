@@ -10,6 +10,7 @@ import { BlogsService } from './blog.service';
 
 export class BlogsServiceImpl extends BaseService implements BlogsService {
   constructor(@InjectModel('Blog') private blogModel: Model<BlogType>,
+  public readonly amqpConnection: AmqpConnection
   ) {
     super()
   }

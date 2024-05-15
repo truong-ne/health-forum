@@ -54,14 +54,9 @@ export default class BlogsController {
 
     @UseGuards(AdminGuard)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Xóa hồ sơ bệnh án của bệnh nhân', description: 'Xóa hồ sơ bệnh án của bệnh nhận' })
-    @ApiResponse({ status: 200, description: 'Thành công' })
-    @ApiResponse({ status: 401, description: 'Chưa xác thực người dùng' })
-    @ApiResponse({ status: 403, description: 'Không có quyền truy cập' })
-    @ApiResponse({ status: 404, description: 'Không tìm thấy hồ sơ bệnh án' })
-    @ApiResponse({ status: 500, description: 'Lỗi máy chủ' })
+    @ApiOperation({ summary: 'Xóa blog'  })
     @Delete(':id')
-    async deletePatientRecord(@Param('id') id: string): Promise<any> {
+    async deleteBlog(@Param('id') id: string): Promise<any> {
         const result = await this.blogsService.deleteBlog(id)
         return result
     }
