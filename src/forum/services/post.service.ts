@@ -5,13 +5,15 @@ import { Post, PostType } from '../schemas/post.schema';
 import { BaseService, getAdvanceResults } from '../../config/base.service';
 import { PostDto, PostIds } from '../dtos/post.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 @Injectable()
 export class PostsService extends BaseService {
   constructor(@InjectModel('Post') private postModel: Model<PostType>,
   @InjectModel('Comment') private commentModel: Model<Comment>,
+  public readonly amqpConnection: AmqpConnection
   ) {
     super()
-    this.getAllUsers()
+    this.updatePostMeili()
   }
 
   create(post: Post) {
@@ -229,7 +231,7 @@ export class PostsService extends BaseService {
   }
 
   @Cron(CronExpression.EVERY_10_MINUTES)
-  async getAllUsers() {
+  async updatePostMeili() {
       const data = await this.getNewsfeedPosts()
       await this.updateMeilisearch('post', data)
   }
