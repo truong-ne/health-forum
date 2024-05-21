@@ -9,6 +9,7 @@ import { RedisClientOptions } from 'redis';
 import { redisClientOption } from './config/database.config';
 import OtpModule from './otp/otp.module';
 import BlogsModule from './blog/blog.module';
+import ChatModule from './chat/chat.module';
 
 dotenv.config()
 @Module({
@@ -22,7 +23,8 @@ dotenv.config()
     AuthModule,
     ForumModule,
     OtpModule,
-    BlogsModule
+    BlogsModule,
+    ChatModule
   ],
 })
 export class AppModule {}

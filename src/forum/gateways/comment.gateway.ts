@@ -35,8 +35,7 @@ export class CommentsGateway {
     @SubscribeMessage('findAll')
     async findAllComment(@MessageBody() postId: string) {
         const data = await this.commentsService.getPostComments(postId)
-        this.server.emit('findAll', data)
-        // return data
+        this.server.emit(`findAll.${postId}`, data)
     }
 
     @UseGuards(JwtWsGuard)
@@ -47,7 +46,6 @@ export class CommentsGateway {
     ) {
         const dto: CommentAddDto = JSON.parse(data)
         const comment = await this.commentsService.addComment(dto, req.user.id) 
-        this.server.emit('comment' , comment)
-        return comment
+        this.server.emit(`comment.${dto.postId}` , comment)
     }
 }

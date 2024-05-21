@@ -33,8 +33,7 @@ export class NotificationsGateway {
     @SubscribeMessage('findAll')
     async findAllNotification(@Req() req) {
         const data = await this.notificationsService.getUserNotifications(req.user.id)
-        this.server.emit('findAll', data)
-        return data
+        this.server.emit(`findAll.${req.user.id}`, data)
     }
 
     @UseGuards(JwtWsGuard)
@@ -45,7 +44,7 @@ export class NotificationsGateway {
     ) {
         const dto: NotificationPostDto = JSON.parse(data)
         const notification = await this.notificationsService.sendPostNotificationToUser(req.user.id, dto.to, dto.postId, dto.type) 
-        this.server.emit('notification' , notification)
+        this.server.emit(`notification.${req.user.id}` , notification)
         return notification
     }
 
@@ -57,13 +56,7 @@ export class NotificationsGateway {
     ) {
         const dto: NotificationConsultationDto = JSON.parse(data)
         const notification = await this.notificationsService.sendConsultationNotificationToUser(req.user.id, dto.to, dto.consultationId, dto.type) 
-        this.server.emit('notification' , notification)
+        this.server.emit(`notification.${req.user.id}` , notification)
         return notification
     }
 }
-
-// jeKseHV94wgPFk77KSA2H
-// ZmUgg9cE6y1NUx1sg-Gj4
-
-
-// 1nxObOdXu9VqcYARmaMAx
