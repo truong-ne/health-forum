@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { RabbitRPC } from "@golevelup/nestjs-rabbitmq"
+import { RabbitPayload, RabbitRPC } from "@golevelup/nestjs-rabbitmq"
 import RoomService from "../services/room.service";
 import { CreateRoomDto } from "../dtos/createRoom.dto";
 
@@ -14,7 +14,8 @@ export class ChatConsumer {
         routingKey: 'room', 
         queue: 'room',
     })
-    async createRoom(dto: CreateRoomDto): Promise<any> {
+    async createRoom(@RabbitPayload() dto: CreateRoomDto): Promise<any> {
+        console.log(dto)
         return await this.roomService.createRoom(dto)
     }
 }
