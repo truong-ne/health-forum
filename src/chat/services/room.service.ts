@@ -29,8 +29,9 @@ export default class RoomService extends BaseService{
         throw new NotFoundException('room_not_found')
 
     const ROOM_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000;
-    const currentTime = Date.now();
-    if(currentTime - room.createdAt.getTime() <= ROOM_EXPIRE_TIME)
+    const currentTime = this.VNTime().getTime();
+    console.log(currentTime - room.createdAt.getTime(), ROOM_EXPIRE_TIME)
+    if(currentTime - room.createdAt.getTime() > ROOM_EXPIRE_TIME)
         throw new BadRequestException('room_is_expire')
 
     return room
@@ -41,7 +42,8 @@ export default class RoomService extends BaseService{
   }
 
   async addMessage(dto: AddMessageDto, sender_id: string) {
-    const room = await this.chatModel.findById(dto.room_id);
+    const room = await this.chatModel.findOne({ _id: dto.room_id });
+    console.log(dto.room_id)
     if (!room) throw new NotFoundException("room_not_found");
 
     if (!room.members.includes(sender_id))
@@ -60,7 +62,11 @@ export default class RoomService extends BaseService{
 
   async createRoom(dto: CreateRoomDto){
     const room = await this.chatModel.findOne({ member: [dto.doctorId, dto.userId] });
-    if (room) throw new NotFoundException("room_has_been_already");
+    if (room) {
+      await room.updateOne({
+        createdAt: this.VNTime(),
+      });
+    }
 
     const data = {
         members: [dto.doctorId, dto.userId],
