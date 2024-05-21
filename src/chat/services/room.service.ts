@@ -63,7 +63,7 @@ export default class RoomService extends BaseService{
     if (room) throw new NotFoundException("room_has_been_already");
 
     const data = {
-        member: [dto.doctorId, dto.userId],
+        members: [dto.doctorId, dto.userId],
         isSeen: [false, false],
         createdAt: this.VNTime()
     }
