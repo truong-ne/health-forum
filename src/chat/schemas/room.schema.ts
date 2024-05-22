@@ -6,6 +6,9 @@ export type RoomType = Room & Document;
 @Schema({ timestamps: true, validateBeforeSave: true })
 export class Room {
   @Prop({ required: true })
+  consultation: string
+
+  @Prop({ required: true })
   members: string[]
 
   @Prop({ required: true, default: [false, false] })

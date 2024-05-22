@@ -3,6 +3,11 @@ import { ApiProperty } from "@nestjs/swagger";
 export class CreateRoomDto {
     @IsNotEmpty()
     @IsString()
+    @ApiProperty({ example: 'ID consultation' })
+    consultationId: string
+
+    @IsNotEmpty()
+    @IsString()
     @ApiProperty({ example: 'ID doctor' })
     doctorId: string
 

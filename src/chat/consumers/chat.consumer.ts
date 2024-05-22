@@ -15,7 +15,15 @@ export class ChatConsumer {
         queue: 'room',
     })
     async createRoom(@RabbitPayload() dto: CreateRoomDto): Promise<any> {
-        console.log(dto)
         return await this.roomService.createRoom(dto)
+    }
+
+    @RabbitRPC({
+        exchange: 'healthline.chat',
+        routingKey: 'get_room', 
+        queue: 'get_room',
+    })
+    async getRoom(@RabbitPayload() ids: string[]): Promise<any> {
+        return await this.roomService.getRoom(ids)
     }
 }

@@ -69,6 +69,7 @@ export default class RoomService extends BaseService{
     }
 
     const data = {
+        consultation: dto.consultationId,
         members: [dto.doctorId, dto.userId],
         isSeen: [false, false],
         createdAt: this.VNTime()
@@ -80,5 +81,11 @@ export default class RoomService extends BaseService{
         code: 200,
         message: 'success'
     }
+  }
+
+  async getRoom(ids: string[]){
+    const rooms = await this.chatModel.find({ consultation: { $in: ids } });
+
+    return rooms
   }
 }
