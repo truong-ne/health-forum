@@ -72,18 +72,18 @@ export default class RoomService extends BaseService{
       await room.updateOne({
         createdAt: this.VNTime(),
       });
-    }
+    } else {
+      const data = {
+          consultation: dto.consultationId,
+          medical_id: dto.medicalId,
+          members: [dto.doctorId, dto.userId],
+          isSeen: [false, false],
+          lastMessage: '',
+          createdAt: this.VNTime()
+      }
 
-    const data = {
-        consultation: dto.consultationId,
-        medical_id: dto.medicalId,
-        members: [dto.doctorId, dto.userId],
-        isSeen: [false, false],
-        lastMessage: '',
-        createdAt: this.VNTime()
+      await this.chatModel.create(data)
     }
-
-    await this.chatModel.create(data)
 
     return {
         code: 200,
