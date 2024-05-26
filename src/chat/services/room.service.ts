@@ -70,6 +70,7 @@ export default class RoomService extends BaseService{
     const room = await this.chatModel.findOne({ members: [ dto.doctorId, dto.userId ],medical_id: dto.medicalId });
     if (room) {
       await room.updateOne({
+        consultation: dto.consultationId,
         createdAt: this.VNTime(),
       });
     } else {
@@ -91,9 +92,25 @@ export default class RoomService extends BaseService{
     }
   }
 
-  async getRoom(ids: string[]){
-    const rooms = await this.chatModel.find({ consultation: { $in: ids } });
+  async getRoom(ids: string[][]){
+    const rooms = []
+    const flag = {}
+    for(let id of ids) {
+      const room = await this.chatModel.findOne({ members: [ id[0], id[1] ],medical_id: id[2] });
+      if(!flag[room._id]){
+        flag[room._id] = true
+        rooms.push(room)
+      }
+    }
 
+    return rooms
+  }
+
+  async getMedicalRoom(userId: string, medicalId: string){
+    const rooms = await this.chatModel.find({ medical_id: medicalId });
+
+    if(rooms[0].members[1] !== userId)
+      throw new UnauthorizedException('unauthorize')
     return rooms
   }
 }

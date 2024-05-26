@@ -23,7 +23,7 @@ export class ChatConsumer {
         routingKey: 'get_room', 
         queue: 'get_room',
     })
-    async getRoom(@RabbitPayload() ids: string[]): Promise<any> {
+    async getRoom(@RabbitPayload() ids: string[][]): Promise<any> {
         return await this.roomService.getRoom(ids)
     }
 }

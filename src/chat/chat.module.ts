@@ -7,6 +7,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import RoomService from './services/room.service';
 import { ChatGateway } from './gateways/chat.gateway';
 import { ChatConsumer } from './consumers/chat.consumer';
+import ChatController from './controllers/chat.controller';
 
 dotenv.config()
 @Module({
@@ -24,7 +25,7 @@ dotenv.config()
         enableControllerDiscovery: true
     }),
   ],
-  controllers: [],
+  controllers: [ChatController],
   providers: [RoomService, ChatGateway, ChatConsumer],
   exports: [RoomService],
 })

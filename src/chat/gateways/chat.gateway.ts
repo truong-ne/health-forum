@@ -86,6 +86,4 @@ export class ChatGateway {
     
     await this.updateMessage(payload.room_id)
   }
-
-
 }
