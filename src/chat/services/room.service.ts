@@ -8,6 +8,7 @@ import { Code } from "mongodb";
 import { AddMessageDto } from "../dtos/addMessage.dto";
 import { BaseService } from "src/config/base.service";
 import { CreateRoomDto } from "../dtos/createRoom.dto";
+import { text } from "stream/consumers";
 
 @Injectable()
 export default class RoomService extends BaseService{
@@ -42,12 +43,17 @@ export default class RoomService extends BaseService{
   }
 
   async addMessage(dto: AddMessageDto, sender_id: string) {
+    if(dto.text === '')
+      throw new BadRequestException('text_not_null')
     const room = await this.chatModel.findOne({ _id: dto.room_id });
-    console.log(dto.room_id)
     if (!room) throw new NotFoundException("room_not_found");
 
     if (!room.members.includes(sender_id))
         throw new UnauthorizedException('unauthorize')
+
+    await room.updateOne({
+      lastMessage: dto.text,
+    });
 
     const message = {
         room_id: dto.room_id,
@@ -61,7 +67,7 @@ export default class RoomService extends BaseService{
   }
 
   async createRoom(dto: CreateRoomDto){
-    const room = await this.chatModel.findOne({ member: [dto.doctorId, dto.userId] });
+    const room = await this.chatModel.findOne({ member: [dto.doctorId, dto.userId], medical_id: dto.medicalId });
     if (room) {
       await room.updateOne({
         createdAt: this.VNTime(),
@@ -70,8 +76,10 @@ export default class RoomService extends BaseService{
 
     const data = {
         consultation: dto.consultationId,
+        medical_id: dto.medicalId,
         members: [dto.doctorId, dto.userId],
         isSeen: [false, false],
+        lastMessage: '',
         createdAt: this.VNTime()
     }
 

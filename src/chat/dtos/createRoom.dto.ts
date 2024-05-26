@@ -8,6 +8,11 @@ export class CreateRoomDto {
 
     @IsNotEmpty()
     @IsString()
+    @ApiProperty({ example: 'ID consultation' })
+    medicalId: string
+
+    @IsNotEmpty()
+    @IsString()
     @ApiProperty({ example: 'ID doctor' })
     doctorId: string
 

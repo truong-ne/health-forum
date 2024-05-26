@@ -9,10 +9,16 @@ export class Room {
   consultation: string
 
   @Prop({ required: true })
+  medical_id: string
+
+  @Prop({ required: true })
   members: string[]
 
   @Prop({ required: true, default: [false, false] })
   isSeen: boolean[]
+
+  @Prop()
+  lastMessage: string
 
   @Prop()
   createdAt: Date;
