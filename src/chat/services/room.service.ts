@@ -67,7 +67,7 @@ export default class RoomService extends BaseService{
   }
 
   async createRoom(dto: CreateRoomDto){
-    const room = await this.chatModel.findOne({ member: [dto.doctorId, dto.userId], medical_id: dto.medicalId });
+    const room = await this.chatModel.findOne({ members: [ dto.doctorId, dto.userId ],medical_id: dto.medicalId });
     if (room) {
       await room.updateOne({
         createdAt: this.VNTime(),

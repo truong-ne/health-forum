@@ -15,7 +15,6 @@ export class ChatConsumer {
         queue: 'room',
     })
     async createRoom(@RabbitPayload() dto: CreateRoomDto): Promise<any> {
-        console.log(dto)
         return await this.roomService.createRoom(dto)
     }
 
