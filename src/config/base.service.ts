@@ -73,6 +73,17 @@ export abstract class BaseService {
     return users.data
   }
 
+  async getMedicalRecord(ids: string[]) {
+    const medicals = await this.amqpConnection.request<any>({
+      exchange: 'healthline.user.information',
+      routingKey: 'medical',
+      payload: ids,
+      timeout: 10000,
+    })
+
+    return medicals
+  }
+
   async getConsultationInformation(ids: string[]) {
     const consultations = await this.amqpConnection.request<any>({
       exchange: 'healthline.user.information',

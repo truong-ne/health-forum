@@ -116,7 +116,7 @@ export default class RoomService extends BaseService{
     if(rooms[0].members[1] !== userId)
       throw new UnauthorizedException('unauthorize')
 
-    const medical = await this.getDataRabbitMq([medicalId])
+    const medical = await this.getMedicalRecord([medicalId])
     const doctors = await this.getDataRabbitMq(Array.from(new Set(rooms.map(r => r.members[0]))))
 
     const data = []
@@ -126,7 +126,7 @@ export default class RoomService extends BaseService{
           data.push({
             id: r._id,
             consultation: r.consultation,
-            medical: medical[0],
+            medical: medical.data[0],
             doctor: item,
             members: r.members,
             isSeen: r.isSeen,
