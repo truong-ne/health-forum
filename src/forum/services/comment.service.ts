@@ -81,7 +81,7 @@ export default class CommentsService extends BaseService {
     const data = []
     comments.forEach(c => {
       for(let item of rabbitmq)
-        if(c.user === item.uid) {
+        if(c.user === item.id) {
           data.push({
             id: c.id,
             user: item,

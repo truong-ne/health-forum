@@ -9,12 +9,14 @@ import { AddMessageDto } from "../dtos/addMessage.dto";
 import { BaseService } from "src/config/base.service";
 import { CreateRoomDto } from "../dtos/createRoom.dto";
 import { text } from "stream/consumers";
+import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 
 @Injectable()
 export default class RoomService extends BaseService{
   constructor(
     @InjectModel('Room') public chatModel: Model<RoomType>,
     @InjectModel('Message') public messageModel: Model<MessageType>,
+    public readonly amqpConnection: AmqpConnection
   ) {
     super()
   }
@@ -64,18 +66,20 @@ export default class RoomService extends BaseService{
     };
 
     await this.messageModel.create(message);
+
+    return room.medical_id
   }
 
   async createRoom(dto: CreateRoomDto){
     const room = await this.chatModel.findOne({ members: [ dto.doctorId, dto.userId ],medical_id: dto.medicalId });
     if (room) {
-      await room.updateOne({
-        consultation: dto.consultationId,
-        createdAt: this.VNTime(),
-      });
+      room.createdAt = this.VNTime()
+      room.consultation.push(dto.consultationId)
+
+      await room.updateOne(room);
     } else {
       const data = {
-          consultation: dto.consultationId,
+          consultation: [dto.consultationId],
           medical_id: dto.medicalId,
           members: [dto.doctorId, dto.userId],
           isSeen: [false, false],
@@ -111,6 +115,28 @@ export default class RoomService extends BaseService{
 
     if(rooms[0].members[1] !== userId)
       throw new UnauthorizedException('unauthorize')
-    return rooms
+
+    const medical = await this.getDataRabbitMq([medicalId])
+    const doctors = await this.getDataRabbitMq(Array.from(new Set(rooms.map(r => r.members[0]))))
+
+    const data = []
+    rooms.forEach(r => {
+      for(let item of doctors)
+        if(r.members[0] === item.id) {
+          data.push({
+            id: r._id,
+            consultation: r.consultation,
+            medical: medical[0],
+            doctor: item,
+            members: r.members,
+            isSeen: r.isSeen,
+            lastMessage: r.lastMessage,
+            createdAt: r.createdAt
+          })
+          break
+        }
+    })
+
+    return data
   }
 }

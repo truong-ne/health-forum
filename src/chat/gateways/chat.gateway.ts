@@ -71,6 +71,16 @@ export class ChatGateway {
     this.server.emit(`messages.${roomId}` , data)
   }
 
+  async updateRoom(medicalId: string, userId: string) {
+    const data = await this.roomService.getMedicalRoom(userId, medicalId)
+    if (data.length === 0) return {
+      code: 404,
+      message: 'medical_need_to_make_appointment'
+    }
+
+    this.server.emit(`room.${medicalId}` , data)
+  }
+
   @UseGuards(JwtWsGuard)
   @SubscribeMessage('allMessage')
   async getMessage(@ConnectedSocket() client: Socket, @MessageBody() roomId: string, @Req() req) {
@@ -82,8 +92,16 @@ export class ChatGateway {
   @UseGuards(JwtWsGuard)
   @SubscribeMessage('addMessage')
   async addMessage(@MessageBody() payload: AddMessageDto, @Req() req) {
-    await this.roomService.addMessage(payload, req.user.id)
+    const medicalId = await this.roomService.addMessage(payload, req.user.id)
     
     await this.updateMessage(payload.room_id)
+    await this.updateRoom(medicalId, req.user.id)
+  }
+
+  @UseGuards(JwtWsGuard)
+  @SubscribeMessage('getRoom')
+  async getRoom(@MessageBody() medicalId: string, @Req() req) {
+    
+    await this.updateRoom(medicalId, req.user.id)
   }
 }
