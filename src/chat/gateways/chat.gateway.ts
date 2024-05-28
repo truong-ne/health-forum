@@ -77,6 +77,12 @@ export class ChatGateway {
     this.server.emit(`room.${medicalId}` , data)
   }
 
+  async updateRoomDoctor(userId: string) {
+    const data = await this.roomService.getDoctorRoom(userId)
+
+    this.server.emit(`room.doctor.${userId}` , data)
+  }
+
   @UseGuards(JwtWsGuard)
   @SubscribeMessage('allMessage')
   async getMessage(@ConnectedSocket() client: Socket, @MessageBody() roomId: string, @Req() req) {
@@ -99,5 +105,12 @@ export class ChatGateway {
   async getRoom(@MessageBody() medicalId: string, @Req() req) {
     
     await this.updateRoom(medicalId, req.user.id)
+  }
+
+  @UseGuards(JwtWsGuard)
+  @SubscribeMessage('getRoomDoctor')
+  async getRoomByDoctor(@Req() req) {
+    
+    await this.updateRoomDoctor(req.user.id)
   }
 }

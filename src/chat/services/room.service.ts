@@ -139,4 +139,32 @@ export default class RoomService extends BaseService{
 
     return data
   }
+
+  async getDoctorRoom(doctorId: string) {
+    const rooms = await this.chatModel.find({ members: { $in: [doctorId] } })
+
+    const medical = await this.getMedicalRecord(Array.from(new Set(rooms.map(r => r.medical_id))))
+    const doctors = await this.getDataRabbitMq([doctorId])
+
+    const data = []
+    rooms.forEach(r => {
+      for(let item of medical.data)
+        if(r.medical_id === item.id) {
+          data.push({
+            id: r._id,
+            consultation: r.consultation,
+            medical: item,
+            doctor: doctors[0],
+            members: r.members,
+            isSeen: r.isSeen,
+            lastMessage: r.lastMessage,
+            createdAt: r.createdAt
+          })
+          break
+        }
+    })
+    console.log(data)
+
+    return data
+  }
 }
