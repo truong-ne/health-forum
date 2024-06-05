@@ -82,6 +82,7 @@ export default class CommentsService extends BaseService {
     comments.forEach(c => {
       for(let item of rabbitmq)
         if(c.user === item.id) {
+          console.log(item)
           data.push({
             id: c.id,
             user: item,
@@ -93,7 +94,7 @@ export default class CommentsService extends BaseService {
         }
     })
     
-    return comments
+    return data
   }
 
   async addComment(dto: CommentAddDto, userId: string): Promise<any> {
