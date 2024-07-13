@@ -24,7 +24,7 @@ export class ChatGateway {
   private logger: Logger = new Logger()
 
   // Decode JWT token
-  private decodeToken(token: string) {
+  private decodeToken(token: string, client: Socket) {
     try {
       const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
       return decoded;
@@ -33,31 +33,28 @@ export class ChatGateway {
         const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.DOCTOR_SECRET);
         return decoded;
       } catch (error) {
-        this.server.disconnectSockets();
+        client.disconnect()
       }
     }
+
+    return
   }
 
   // client connected
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     const token = client.handshake.headers.authorization
-    const decodedToken = this.decodeToken(token) as any
+    const decodedToken = await this.decodeToken(token, client) as any
     if (!decodedToken) {
       // Handle the case where token is invalid or missing
       return
     }
 
     const { id } = decodedToken; // Assume `sid` is the property in your payload
-    // client.join(id)
-    // // this.payload = decodedToken
-    this.logger.verbose(`Client connected: ${id}`)
     this.isFirstConnectionMap.set(client, true)
-    // this.sendDataToClient(client, id, this.today())
   }
 
   // client disconnected
   handleDisconnect(client: Socket) {
-    this.logger.verbose(`Client disconnected: ${client.id}`)
     this.isFirstConnectionMap.delete(client)
   }
 
@@ -86,7 +83,11 @@ export class ChatGateway {
   @UseGuards(JwtWsGuard)
   @SubscribeMessage('allMessage')
   async getMessage(@ConnectedSocket() client: Socket, @MessageBody() roomId: string, @Req() req) {
-    const room = await this.roomService.checkExistingConversation(roomId, req.user.id)
+    try {
+      const room = await this.roomService.checkExistingConversation(roomId, req.user.id)
+    } catch (error) {
+      return error
+    }
 
     await this.updateMessage(roomId)
   }
