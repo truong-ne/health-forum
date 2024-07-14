@@ -31,11 +31,11 @@ export default class RoomService extends BaseService{
     if(!room)
         throw new NotFoundException('room_not_found')
 
-    const ROOM_EXPIRE_TIME = 30 * 24 * 60 * 60 * 1000;
-    const currentTime = this.VNTime().getTime();
-    console.log(currentTime - room.createdAt.getTime(), ROOM_EXPIRE_TIME)
-    if(currentTime - room.createdAt.getTime() > ROOM_EXPIRE_TIME)
-        throw new BadRequestException('room_is_expire')
+    // const ROOM_EXPIRE_TIME = 30 * 24 * 60 * 60 * 1000;
+    // const currentTime = this.VNTime().getTime();
+    // console.log(currentTime - room.createdAt.getTime(), ROOM_EXPIRE_TIME)
+    // if(currentTime - room.createdAt.getTime() > ROOM_EXPIRE_TIME)
+    //     throw new BadRequestException('room_is_expire')
 
     return room
   }
