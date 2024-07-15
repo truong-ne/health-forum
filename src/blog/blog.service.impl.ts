@@ -13,6 +13,7 @@ export class BlogsServiceImpl extends BaseService implements BlogsService {
   public readonly amqpConnection: AmqpConnection
   ) {
     super()
+    this.getAllBlog()
   }
 
   async create(blog: Blog): Promise<any> {
@@ -103,6 +104,8 @@ export class BlogsServiceImpl extends BaseService implements BlogsService {
             "code": 400,
             "message": "blog_not_found"
         }
+
+        await this.getAllBlog()
         return {
             "code": 200,
             "message": "success"
@@ -114,21 +117,23 @@ export class BlogsServiceImpl extends BaseService implements BlogsService {
     const blog = await this.blogModel.findById(id);
     if (!blog) throw new NotFoundException('blog_not_found');
 
-    const rabbit = await this.amqpConnection.request<any>({
-        exchange: 'healthline.upload.folder',
-        routingKey: 'delete_file',
-        payload: [blog.photo],
-        timeout: 20000,
-    })
+    // const rabbit = await this.amqpConnection.request<any>({
+    //     exchange: 'healthline.upload.folder',
+    //     routingKey: 'delete_file',
+    //     payload: [blog.photo],
+    //     timeout: 20000,
+    // })
 
-    if(rabbit.code !== 200)
-        return rabbit
+    // if(rabbit.code !== 200)
+    //     return rabbit
 
     try {
       await this.delete(id)
     } catch (error) {
       throw new BadRequestException("delete_blog_failed")
     }
+
+    await this.deleteIndexMeilisearch('blog', id)
     return {
       "code": 200,
       "message": "success"
