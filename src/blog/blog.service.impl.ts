@@ -75,6 +75,7 @@ export class BlogsServiceImpl extends BaseService implements BlogsService {
             }
         }
     
+        await this.getAllBlog()
         return {
             "code": 200,
             "message": "success"
@@ -140,7 +141,7 @@ export class BlogsServiceImpl extends BaseService implements BlogsService {
     }
   }
 
-    @Cron(CronExpression.EVERY_10_MINUTES)
+    // @Cron(CronExpression.EVERY_10_MINUTES)
     async getAllBlog() {
         const blogs = await this.blogModel.find()
 
